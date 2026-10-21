@@ -72,20 +72,20 @@ export default function Onboarding() {
     const draft = { ...d, mbti: mbtiUnknown ? '' : mbti.join('') }
     saveDraft(draft)
     if (step < 3) return setStep(step + 1)
-    // 매칭 선호까지 있는 기존 프로필이면 바로 서버에 저장 (없으면 첫 신청 때 함께 저장)
-    if (live() && server?.desiredTypes.length && server.priceRanges.length) {
+    // 로그인한 계정은 바로 서버에 저장 (매칭 선호는 비어 있어도 되고, 신청할 때 고른다)
+    if (live()) {
       put('/api/me/profile', {
         name: draft.name,
         birthYear: Number(draft.birthYear),
         gender: draft.gender,
         job: draft.job,
-        instagramId: server.instagramId || draft.instagramId || '미입력',
-        mbti: draft.mbti || server.mbti || 'ENFP',
+        instagramId: draft.instagramId || server?.instagramId || null,
+        mbti: draft.mbti || null,
         interests: draft.interests,
         traits: draft.traits,
-        desiredTypes: server.desiredTypes,
-        priceRanges: server.priceRanges,
-        foodRestrictions: server.foodRestrictions,
+        desiredTypes: server?.desiredTypes ?? null,
+        priceRanges: server?.priceRanges ?? null,
+        foodRestrictions: server?.foodRestrictions ?? null,
       }).catch(() => undefined)
     }
     session.patch({ name: draft.name })

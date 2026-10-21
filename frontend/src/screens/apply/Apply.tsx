@@ -4,7 +4,7 @@ import { AppBar, Badge, Body, Button, Chip, Dialog, Footer, Screen, Sheet, TextF
 import { Icon } from '../../components/Icon'
 import { get, post, put, session } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
-import { ALLERGIES, CUISINES, DESIRED_TYPES, PRICE_RANGES, labelOf, toggle } from '../../lib/options'
+import { ALLERGIES, CUISINES, DESIRED_TYPES, PRICE_RANGES, labelOf, loadDraft, toggle } from '../../lib/options'
 import type { ApplicationView, OpenSlotsResponse, SubmitResponse, TicketDto, TicketOption } from '../../lib/types'
 import { demoApplications, demoSlots, demoTickets } from '../../lib/demo'
 import { demoApplyDefaults, initialApply, hasPrevious, loadApply, loadLast, rememberLast, saveApply, type ApplyState } from './applyState'
@@ -387,16 +387,19 @@ export function ApplyPayment() {
           await post(`/api/payments/${retry.data.payment.paymentId}/confirm`, { simulateFailure: false })
         } else {
           // 서버에 저장된 프로필은 그대로 두고, 이번 신청에서 고른 선호만 반영
+          // 가입 때 적은 프로필(이 기기 초안)을 우선, 없으면 서버에 저장된 값
           const p = await get<Record<string, unknown>>('/api/me/profile')
+          const d = loadDraft()
+          const pick = <V,>(a: V | '' | null | undefined, b: unknown) => (a !== '' && a !== null && a !== undefined && !(Array.isArray(a) && a.length === 0) ? a : (b ?? null))
           await put('/api/me/profile', {
-            name: p.name,
-            birthYear: p.birthYear,
-            gender: p.gender,
-            job: p.job,
-            instagramId: p.instagramId,
-            mbti: p.mbti,
-            interests: p.interests,
-            traits: p.traits,
+            name: pick(d.name, p.name ?? session.user?.name),
+            birthYear: pick(d.birthYear ? Number(d.birthYear) : null, p.birthYear),
+            gender: pick(d.gender, p.gender),
+            job: pick(d.job, p.job),
+            instagramId: pick(d.instagramId, p.instagramId),
+            mbti: pick(d.mbti, p.mbti),
+            interests: pick(d.interests, p.interests),
+            traits: pick(d.traits, p.traits),
             desiredTypes: s.desiredTypes,
             priceRanges: s.priceRanges,
             foodRestrictions: [s.cuisines.length ? `선호: ${s.cuisines.join(', ')}` : '', s.allergies.filter((a) => a !== '없음').length ? `알레르기: ${s.allergies.join(', ')}` : '']

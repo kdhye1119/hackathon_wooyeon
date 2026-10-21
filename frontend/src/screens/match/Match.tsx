@@ -131,7 +131,7 @@ export function MatchConfirmed() {
 
   return (
     <Screen>
-      <AppBar title="매칭 확정" action={<BellButton unread={false} />} />
+      <AppBar title="매칭 확정" action={<BellButton />} />
       <Body className="match-body">
         <div className="stack" style={{ gap: 10 }}>
           <Badge tone="확정">테이블 확정</Badge>

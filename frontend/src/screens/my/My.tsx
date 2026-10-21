@@ -143,16 +143,6 @@ export function MyPage() {
           </Button>
         </div>
 
-        {!profile.demo && profile.data.phone && (
-          <div className="ticket-link">
-            <Icon name="phone" color="var(--terracotta)" />
-            <span className="t-h3">{profile.data.phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}</span>
-            <Button size="S" variant="secondary" onClick={() => setPhoneSheet(true)}>
-              연락처 변경
-            </Button>
-          </div>
-        )}
-
         <button className="ticket-link" onClick={() => navigate('/my/tickets')}>
           <Icon name="ticket" color="var(--terracotta)" />
           <span className="t-h3">{member ? `${member.productLabel}, ${member.expiresAt.slice(0, 10).replace(/-/g, '.')}까지` : `보관 이용권 ${kept}장`}</span>

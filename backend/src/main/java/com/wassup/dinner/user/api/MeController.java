@@ -28,8 +28,8 @@ public class MeController {
             @NotNull @Min(1960) @Max(2008) Integer birthYear,
             @NotNull Gender gender,
             @NotBlank String job,
-            @NotBlank String instagramId,
-            @NotBlank @Pattern(regexp = "^[EI][SN][TF][JP]$", message = "MBTI 4글자 (예: ENFP)") String mbti,
+            /* 선택 */ String instagramId,
+            /* 선택 (모름이면 비움) */ @Pattern(regexp = "^([EIei][SNsn][TFtf][JPjp])?$", message = "MBTI 4글자 (예: ENFP)") String mbti,
             @NotEmpty Set<Interest> interests,
             @NotEmpty Set<Trait> traits,
             /* 매칭 선호는 비워도 된다 (신청서에서 고르지 않으면 null/빈 값) */
