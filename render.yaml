@@ -1,0 +1,20 @@
+# Render 예비 배포 (Blueprint). DB 는 외부 MySQL(Aiven 등) 주소를 환경 변수로 넣는다.
+services:
+  - type: web
+    name: wooyeon-dinner
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/meta/options
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: TOKEN_SECRET
+        generateValue: true
+      - key: TZ
+        value: Asia/Seoul

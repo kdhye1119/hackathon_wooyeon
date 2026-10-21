@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { LoadingVeil, beginLoad, endLoad } from '../lib/loading'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Icon, type IconName } from '../components/Icon'
 import { adminSession, get } from '../lib/api'
@@ -12,6 +13,7 @@ export function useAdminApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unk
   const [data, setData] = useState<T>(fallback)
   const [demo, setDemo] = useState(false)
   const [loading, setLoading] = useState(true)
+  const first = useRef(true)
   const load = useCallback(async () => {
     if (!adminSession.token || adminSession.token === 'demo') {
       setData(fallback)
@@ -20,6 +22,9 @@ export function useAdminApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unk
       return
     }
     setLoading(true)
+    const veil = first.current
+    first.current = false
+    if (veil) beginLoad()
     try {
       setData(await fetcher())
       setDemo(false)
@@ -28,6 +33,7 @@ export function useAdminApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unk
       setDemo(true)
     } finally {
       setLoading(false)
+      if (veil) endLoad()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
@@ -141,6 +147,7 @@ export function AdminLayout({ title, children, onBack }: { title: ReactNode; chi
     <div className="adm">
       <Sidebar />
       <main className="adm-main">
+        <LoadingVeil className="loading-veil adm" />
         <header className="adm-top">
           {onBack && (
             <button className="icon-btn" aria-label="뒤로" onClick={onBack}>

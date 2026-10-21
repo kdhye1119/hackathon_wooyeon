@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { adminSession, get, post, session, userKey } from '../lib/api'
+import { api, session, userKey } from '../lib/api'
 import type { ApplicationView } from '../lib/types'
 import { fmt } from '../lib/useApi'
 import './demo-panel.css'
@@ -27,11 +27,16 @@ const STATUS: Record<string, string> = {
 }
 const st = (c: string | null | undefined) => (c ? (STATUS[c] ?? c) : '')
 
+/** 시연 도구 전용 운영자 토큰: 운영자 화면 로그인과 분리해 이 탭의 메모리에만 둔다 */
+let demoAdminToken: string | null = null
 async function ensureAdmin() {
-  if (adminSession.token && adminSession.token !== 'demo') return
-  const r = await post<{ token: string; name: string | null }>('/api/auth/admin/login', { loginId: 'admin', password: 'admin1234' })
-  adminSession.save(r.token, r.name ?? undefined)
+  if (demoAdminToken) return
+  const r = await api<{ token: string }>('/api/auth/admin/login', { method: 'POST', json: { loginId: 'admin', password: 'admin1234' } })
+  demoAdminToken = r.token
 }
+const withAuth = (path: string): HeadersInit => (path.startsWith('/api/admin') && demoAdminToken ? { Authorization: `Bearer ${demoAdminToken}` } : {})
+const get = <T,>(path: string) => api<T>(path, { headers: withAuth(path) })
+const post = <T,>(path: string, json?: unknown) => api<T>(path, { method: 'POST', json: json ?? {}, headers: withAuth(path) })
 
 const TARGET_KEY = () => userKey('wt.demoTarget')
 const storedTarget = () => {
