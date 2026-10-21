@@ -37,6 +37,12 @@ function safeSet(key: string, v: string | null) {
   }
 }
 
+/** 이 기기에 저장하는 참가자별 데이터(일기·지난 신청 등)는 계정마다 따로: 다른 계정 내역이 섞이지 않게 */
+export function userKey(base: string) {
+  const id = session.user?.id
+  return id ? `${base}.${id}` : base
+}
+
 export const session = {
   get token() {
     return safeGet(TOKEN_KEY)
@@ -107,3 +113,16 @@ export const get = <T,>(path: string) => api<T>(path)
 export const post = <T,>(path: string, json?: unknown) => api<T>(path, { method: 'POST', json: json ?? {} })
 export const put = <T,>(path: string, json?: unknown) => api<T>(path, { method: 'PUT', json: json ?? {} })
 export const del = <T,>(path: string) => api<T>(path, { method: 'DELETE' })
+
+/** 인증이 필요한 파일(CSV 등) 내려받기: 토큰을 붙여 받아서 저장 */
+export async function download(path: string, filename: string) {
+  const token = path.startsWith('/api/admin') ? adminSession.token : session.token
+  const res = await fetch(path, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!res.ok) throw new ApiError(res.status, `내려받지 못했어요 (${res.status})`)
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}

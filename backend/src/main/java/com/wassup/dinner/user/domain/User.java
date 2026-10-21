@@ -29,6 +29,10 @@ public class User {
     /** 비밀번호 해시 (PBKDF2). null 이면 비밀번호 없이 테스트 로그인하는 계정 (시연·가상 데이터) */
     private String passwordHash;
 
+    /** 소셜 로그인 연결 (kakao:123 / naver:abc). 휴대폰 번호는 가입 뒤 인증해 등록 */
+    @Column(unique = true, length = 120)
+    private String socialKey;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private AccountStatus status = AccountStatus.ACTIVE;

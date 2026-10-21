@@ -2,9 +2,10 @@
 .home-section { display: flex; flex-direction: column; gap: 12px; }
 .empty-box { border: 1px dashed var(--sage); border-radius: 18px; padding: 22px 0; text-align: center; }
 
-.list-card { border: 1px solid var(--sage); border-radius: 18px; padding: 0 16px; background: var(--paper); }
-.list-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
-.list-row + .list-row { border-top: 1px solid var(--sage); }
+/* 목록: 한 줄 = 독립된 카드 (구분선 대신 간격) */
+.list-card { display: flex; flex-direction: column; gap: 10px; }
+.list-card[hidden] { display: none; }
+.list-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--sage); border-radius: 18px; background: var(--paper); }
 .list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .list-main p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -136,3 +137,7 @@
   0%, 100% { background: var(--sage); }
   33% { background: var(--mustard); }
 }
+/* 후기 전체 화면: 세로 목록 */
+.review-list { display: flex; flex-direction: column; gap: 12px; }
+.review-list .review-card { flex: none; }
+.more-link { display: inline-flex; align-items: center; gap: 2px; background: none; border: 0; padding: 0; }

@@ -3,8 +3,14 @@
 .venue-photo {
   position: relative;
   height: 180px;
-  background: linear-gradient(147deg, #f2c46a 0%, rgba(181, 83, 47, 0.9) 40.7%, rgba(76, 69, 65, 0.95) 74%);
+  background: var(--paper);
+  overflow: hidden;
 }
+/* 사진 없을 때: 로고 */
+.venue-photo-empty { height: 100%; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--mustard) 28%, var(--card)); }
+.venue-photo-track { display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.venue-photo-track::-webkit-scrollbar { display: none; }
+.venue-photo-track img { flex: 0 0 100%; width: 100%; height: 100%; object-fit: cover; scroll-snap-align: center; }
 .photo-count {
   position: absolute;
   top: 12px;
@@ -33,7 +39,9 @@
   line-height: normal;
   text-decoration: none;
 }
-.photo-dots { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); }
+.photo-dots { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 5px; }
+.photo-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--paper); opacity: 0.55; }
+.photo-dots i.on { opacity: 1; }
 .venue-info { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
 .kv-row { display: flex; align-items: flex-start; gap: 12px; }
 .kv-row > span { width: 64px; flex-shrink: 0; font-size: 13px; line-height: 1.55; color: var(--sage); }

@@ -29,35 +29,31 @@ public class TableBriefing {
     private final ConversationContentService contentService;
     private final MessageTemplateRepository templateRepository;
 
-    public static final String CANCEL_POLICY = RoomTemplate.ROOM_NOTICE.getDefaultBody();
+    public static final String CANCEL_POLICY = RoomTemplate.CANCEL_POLICY;
 
-    /** 운영자가 수정한 단체방 공지 본문 (시간·장소·취소 정책 안내) */
+    /** 단체방 상단·정보 화면용 취소 정책 */
     public String cancelPolicy() {
-        return text(RoomTemplate.ROOM_NOTICE.name(), false, RoomTemplate.ROOM_NOTICE.getDefaultBody());
+        return CANCEL_POLICY;
     }
 
-    public String announcement(EventSlot slot, DiningTable table, Venue venue) {
-        Map<String, String> v = vars(slot, table, venue, null);
-        String curation = render(text(RoomTemplate.ROOM_CURATION.name(), false, RoomTemplate.ROOM_CURATION.getDefaultBody()), v);
-        return "🎉 " + render(text(RoomTemplate.ROOM_NOTICE.name(), true, RoomTemplate.ROOM_NOTICE.getDefaultTitle()), v) + "\n\n"
-                + place(slot, table, venue) + "\n\n"
-                + "✨ " + render(text(RoomTemplate.ROOM_CURATION.name(), true, RoomTemplate.ROOM_CURATION.getDefaultTitle()), v) + "\n"
-                + (curation.isBlank() ? "" : curation + "\n") + table.getCuration() + "\n\n"
-                + render(cancelPolicy(), v);
+    /** 테이블 확정 공지 (ROOM_NOTICE + ROOM_CURATION 템플릿) */
+    public String announcement(EventSlot slot, DiningTable table, Venue venue, Collection<String> memberTraits) {
+        Map<String, String> v = vars(slot, table, venue, memberTraits, null);
+        v.put("큐레이션", "✨ " + render(text(RoomTemplate.ROOM_CURATION, true), v) + "\n" + render(text(RoomTemplate.ROOM_CURATION, false), v));
+        return "🎉 " + render(text(RoomTemplate.ROOM_NOTICE, true), v) + "\n\n" + render(text(RoomTemplate.ROOM_NOTICE, false), v);
     }
 
+    /** 행사 1일 전 리마인드 (ROOM_REMINDER 템플릿) */
     public String reminder(EventSlot slot, DiningTable table, Venue venue) {
-        Map<String, String> v = vars(slot, table, venue, null);
-        String title = render(text(NotificationType.EVENT_REMINDER.name(), true, NotificationType.EVENT_REMINDER.getDefaultTitle()), v);
-        return "⏰ " + title + "\n\n" + place(slot, table, venue)
-                + "\n\n도착하시면 앱에서 [체크인]을 눌러주세요.\n\n" + render(cancelPolicy(), v);
+        Map<String, String> v = vars(slot, table, venue, List.of(), null);
+        return "⏰ " + render(text(RoomTemplate.ROOM_REMINDER, true), v) + "\n\n" + render(text(RoomTemplate.ROOM_REMINDER, false), v);
     }
 
     public String content(EventSlot slot, DiningTable table, Venue venue, Collection<String> memberTraits) {
         TableContent c = contentService.generate(table.getCommonInterests(), memberTraits, table.getId());
-        Map<String, String> v = vars(slot, table, venue, c);
-        String intro = render(text(RoomTemplate.ROOM_TOPICS.name(), false, RoomTemplate.ROOM_TOPICS.getDefaultBody()), v);
-        StringBuilder sb = new StringBuilder("💬 " + render(text(RoomTemplate.ROOM_TOPICS.name(), true, RoomTemplate.ROOM_TOPICS.getDefaultTitle()), v) + "\n");
+        Map<String, String> v = vars(slot, table, venue, memberTraits, c);
+        String intro = render(text(RoomTemplate.ROOM_TOPICS, false), v);
+        StringBuilder sb = new StringBuilder("💬 " + render(text(RoomTemplate.ROOM_TOPICS, true), v) + "\n");
         if (!intro.isBlank()) {
             sb.append(intro).append("\n\n");
         }
@@ -65,7 +61,7 @@ public class TableBriefing {
             sb.append(i + 1).append(". ").append(c.topics().get(i)).append('\n');
         }
         sb.append("\n🎮 아이스브레이킹\n");
-        c.icebreakers().forEach(g -> sb.append("· ").append(g).append('\n'));
+        c.icebreakers().forEach(g -> sb.append("- ").append(g).append('\n'));
         return sb.toString().trim();
     }
 
@@ -73,31 +69,45 @@ public class TableBriefing {
         return contentService.generate(table.getCommonInterests(), memberTraits, table.getId());
     }
 
-    private String text(String code, boolean title, String fallback) {
-        MessageTemplate t = templateRepository.findByCode(code).orElse(null);
-        String s = t == null ? null : (title ? t.getTitle() : t.getBody());
-        return s == null ? fallback : s;
+    private String text(RoomTemplate t, boolean title) {
+        MessageTemplate m = templateRepository.findByCode(t.name()).orElse(null);
+        String s = m == null ? null : (title ? m.getTitle() : m.getBody());
+        return s == null ? (title ? t.getDefaultTitle() : t.getDefaultBody()) : s;
     }
 
-    /** 단체방 템플릿 변수 */
-    private static Map<String, String> vars(EventSlot slot, DiningTable table, Venue venue, TableContent content) {
+    /** 단체방 템플릿 변수. 값이 "" 인 변수가 들어간 줄은 render 에서 빠진다 */
+    static Map<String, String> vars(EventSlot slot, DiningTable table, Venue venue, Collection<String> traits, TableContent content) {
         Map<String, String> v = new HashMap<>();
-        v.put("식당명", venue == null ? "식당(배정 중)" : venue.getName());
-        v.put("주소", venue == null ? "-" : venue.getAddress());
+        v.put("일시", slot.label().replace(" " + slot.getRegion().getLabel(), ""));
+        v.put("지역", slot.getRegion().getLabel());
         v.put("집합시간", slot.getStartTime().minusMinutes(10).toString());
-        v.put("예약명", table.getReservationName() == null ? "-" : table.getReservationName());
-        v.put("인원", String.valueOf(table.getMemberCount()));
+        v.put("식당명", venue == null ? "식당 배정 중" : venue.getName());
+        v.put("주소", venue == null ? "확정되면 바로 안내드릴게요" : venue.getAddress());
+        v.put("지도", venue == null || venue.getMapUrl() == null ? "" : venue.getMapUrl());
+        v.put("예약명", venue == null || table.getReservationName() == null ? "" : table.getReservationName());
+        v.put("식사비", venue == null ? "" : venue.getPriceGuide() == null ? venue.getPriceRange().getLabel() : venue.getPriceGuide());
+        int n = table.getMemberCount();
+        v.put("인원", String.valueOf(n));
+        v.put("남", String.valueOf(table.getMaleCount()));
+        v.put("여", String.valueOf(table.getFemaleCount()));
         int year = slot.getDate().getYear();
         if (table.getMaxBirthYear() > 0) {
             String young = ageBand(year - table.getMaxBirthYear());
             String old = ageBand(year - table.getMinBirthYear());
             v.put("연령대", young.equals(old) ? young : young + " ~ " + old);
         } else {
-            v.put("연령대", "-");
+            v.put("연령대", "");
         }
-        v.put("공통관심사", table.getCommonInterests().isEmpty() ? "서로 다른 관심사"
+        v.put("공통관심사", table.getCommonInterests().isEmpty() ? "각자 다른 관심사 (새로운 이야기가 많을 거예요)"
                 : table.getCommonInterests().stream().limit(3).map(i -> Options.Interest.valueOf(i).getLabel()).collect(Collectors.joining(", ")));
-        v.put("성향구성", table.getMbtiSummary() == null ? "-" : table.getMbtiSummary());
+        long e = table.getMbtiSummary() == null ? 0
+                : java.util.Arrays.stream(table.getMbtiSummary().split(",")).map(String::trim).filter(m -> m.startsWith("E")).count();
+        v.put("MBTI", table.getMbtiSummary() == null || table.getMbtiSummary().isBlank() ? ""
+                : "E " + e + ", I " + (n - e) + (e > 0 && e < n ? " — 이끄는 분과 들어주는 분이 고르게 섞였어요" : ""));
+        v.put("분위기", traits == null ? "" : traits.stream().distinct().limit(3)
+                .map(t -> Options.Trait.valueOf(t).getLabel()).collect(Collectors.joining(", ")));
+        // 옛 변수 이름 호환
+        v.put("성향구성", v.get("MBTI"));
         if (content != null) {
             v.put("대화주제", content.topics().isEmpty() ? "" : content.topics().get(0));
             v.put("게임", content.icebreakers().isEmpty() ? "" : content.icebreakers().get(0));
@@ -107,28 +117,28 @@ public class TableBriefing {
 
     private static final Pattern VAR = Pattern.compile("\\{\\{(.+?)}}|\\{(\\w+)}");
 
+    /** {{변수}} 치환. 값이 빈 변수가 있는 줄은 빼고, 연속 빈 줄은 하나로 */
     static String render(String s, Map<String, String> vars) {
-        Matcher m = VAR.matcher(s);
-        StringBuilder sb = new StringBuilder();
-        while (m.find()) {
-            String key = m.group(1) != null ? m.group(1).trim() : m.group(2);
-            m.appendReplacement(sb, Matcher.quoteReplacement(vars.getOrDefault(key, m.group())));
+        StringBuilder out = new StringBuilder();
+        for (String line : s.split("\n", -1)) {
+            Matcher m = VAR.matcher(line);
+            StringBuilder sb = new StringBuilder();
+            boolean drop = false;
+            while (m.find()) {
+                String key = m.group(1) != null ? m.group(1).trim() : m.group(2);
+                String val = vars.get(key);
+                if (val != null && val.isEmpty()) {
+                    drop = true;
+                }
+                m.appendReplacement(sb, Matcher.quoteReplacement(val == null ? m.group() : val));
+            }
+            if (drop) {
+                continue;
+            }
+            m.appendTail(sb);
+            out.append(sb).append('\n');
         }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    private static String place(EventSlot slot, DiningTable table, Venue venue) {
-        String when = "📅 " + slot.label().replace(" " + slot.getRegion().getLabel(), "")
-                + " (10분 전 도착 권장)";
-        if (venue == null) {
-            return when + "\n📍 식당은 배정 중이에요. 확정되면 바로 안내드릴게요.";
-        }
-        return when
-                + "\n📍 " + venue.getName() + " · " + venue.getAddress()
-                + "\n🗺 " + venue.getMapUrl()
-                + "\n🧾 예약명: " + table.getReservationName()
-                + "\n💰 " + (venue.getPriceGuide() == null ? venue.getPriceRange().getLabel() : venue.getPriceGuide());
+        return out.toString().replaceAll("\n{3,}", "\n\n").strip();
     }
 
     /** 확정 테이블의 조합 큐레이션 (상세 개인정보·점수 없이 구성 특징만) */
@@ -140,10 +150,10 @@ public class TableBriefing {
         String interests = commonInterests.isEmpty() ? "각자 다른 관심사 (새로운 이야기가 많을 거예요)"
                 : commonInterests.stream().limit(3).map(i -> Options.Interest.valueOf(i).getLabel()).collect(Collectors.joining(", "));
         String vibe = traits.stream().distinct().limit(3)
-                .map(t -> Options.Trait.valueOf(t).getLabel()).collect(Collectors.joining(" · "));
-        return "👥 " + ages + " " + memberCount + "명 (남 " + male + " · 여 " + female + ")\n"
+                .map(t -> Options.Trait.valueOf(t).getLabel()).collect(Collectors.joining(", "));
+        return "👥 " + ages + " " + memberCount + "명 (남 " + male + ", 여 " + female + ")\n"
                 + "💡 공통 관심사: " + interests + "\n"
-                + "🧭 MBTI 에너지: E " + e + " · I " + (memberCount - e)
+                + "🧭 MBTI 에너지: E " + e + ", I " + (memberCount - e)
                 + (e > 0 && e < memberCount ? " — 이끄는 분과 들어주는 분이 고르게 섞였어요" : "") + "\n"
                 + "🌿 테이블 분위기: " + vibe;
     }

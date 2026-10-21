@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Payment", description = "모의 결제·이용권")
+@Tag(name = "Payment", description = "모의 결제/이용권")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -19,14 +19,14 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    public record ConfirmRequest(boolean simulateFailure) {
+    public record ConfirmRequest(Boolean simulateFailure) {
     }
 
     @Operation(summary = "결제 승인 (모의 PG). simulateFailure=true 면 카드 승인 거절을 시뮬레이션")
     @PostMapping("/payments/{paymentId}/confirm")
     public PaymentDto confirm(LoginUser user, @PathVariable Long paymentId,
                               @RequestBody(required = false) ConfirmRequest request) {
-        return paymentService.confirm(user.userId(), paymentId, request != null && request.simulateFailure());
+        return paymentService.confirm(user.userId(), paymentId, request != null && Boolean.TRUE.equals(request.simulateFailure()));
     }
 
     @Operation(summary = "내 결제 내역")
@@ -35,7 +35,7 @@ public class PaymentController {
         return paymentService.myPayments(user.userId());
     }
 
-    @Operation(summary = "보유 이용권 (남은 횟수·유효기간)")
+    @Operation(summary = "보유 이용권 (남은 횟수/유효기간)")
     @GetMapping("/me/tickets")
     public List<TicketDto> tickets(LoginUser user) {
         return paymentService.myTickets(user.userId());

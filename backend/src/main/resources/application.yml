@@ -1,6 +1,10 @@
 spring:
   application:
     name: dinner
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
   config:
     # DB 비밀번호 등 로컬 비밀값 (git 제외). 예시는 config/local.example.yml 참고
     import: optional:file:./config/local.yml
@@ -39,7 +43,16 @@ app:
     token-secret: ${TOKEN_SECRET:change-me-wassup-dinner-hackathon-secret-key}
     token-ttl-hours: 720
   cors:
-    allowed-origins: http://localhost:5173,http://localhost:3000
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+  # 소셜 로그인 (키가 없으면 버튼이 '설정 필요' 안내만 보여줌)
+  oauth:
+    redirect-base: ${OAUTH_REDIRECT_BASE:http://localhost:5173}
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:}
+      client-secret: ${KAKAO_CLIENT_SECRET:}
+    naver:
+      client-id: ${NAVER_CLIENT_ID:}
+      client-secret: ${NAVER_CLIENT_SECRET:}
   automation:
     enabled: true
     tick-ms: 10000

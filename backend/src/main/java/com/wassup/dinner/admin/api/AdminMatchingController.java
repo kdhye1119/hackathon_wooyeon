@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Admin - Matching", description = "자동 매칭 모니터·실행 기록·테이블 상세·정책")
+@Tag(name = "Admin - Matching", description = "자동 매칭 모니터/실행 기록/테이블 상세/정책")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -42,6 +42,7 @@ public class AdminMatchingController {
     private final VenueService venueService;
     private final ChatService chatService;
     private final TableBriefing briefing;
+    private final com.wassup.dinner.matching.application.TableService tableService;
 
     public record RunRequest(@NotNull List<Long> slotIds) {
     }
@@ -55,7 +56,7 @@ public class AdminMatchingController {
         return queryService.runs();
     }
 
-    @Operation(summary = "매칭 실행 상세 (생성·분리·병합·재배치·확정·실패 로그, 실패자)")
+    @Operation(summary = "매칭 실행 상세 (생성/분리/병합/재배치/확정/실패 로그, 실패자)")
     @GetMapping("/match-runs/{id}")
     public MatchRunDetail run(@PathVariable Long id) {
         return queryService.run(id);
@@ -76,7 +77,7 @@ public class AdminMatchingController {
         return queryService.tables(slotId);
     }
 
-    @Operation(summary = "테이블 상세: 구성원·조건 충족·점수·식당·단체방·발송 상태")
+    @Operation(summary = "테이블 상세: 구성원/조건 충족/점수/식당/단체방/발송 상태")
     @GetMapping("/tables/{id}")
     public TableDetail table(@PathVariable Long id) {
         return queryService.table(id);
@@ -89,17 +90,36 @@ public class AdminMatchingController {
         DiningTable table = tableRepository.findById(id).orElseThrow(() -> ApiException.notFound("테이블"));
         EventSlot slot = slotRepository.findById(table.getSlotId()).orElseThrow();
         Venue venue = venueService.assignManually(table, slot, request.venueId());
-        chatService.postNotice(table.getId(), "📍 식당이 확정되었어요!\n\n" + briefing.announcement(slot, table, venue));
+        chatService.postNotice(table.getId(), "📍 식당이 확정되었어요!\n\n" + chatService.announcement(table, slot, venue));
         return queryService.table(id);
     }
 
-    @Operation(summary = "매칭 정책 조회 (가중치·최소 점수·필수 조건)")
+    public record MoveRequest(@NotNull Long applicationId, Long targetTableId, String reason) {
+    }
+
+    public record DissolveRequest(String reason) {
+    }
+
+    @Operation(summary = "긴급 수정: 참가자 이동 (targetTableId 생략 시 새 테이블로 분리, 전원 이동 시 병합). 이력 기록")
+    @PostMapping("/tables/{id}/move")
+    public TableDetail moveMember(LoginUser admin, @PathVariable Long id, @RequestBody MoveRequest request) {
+        DiningTable target = tableService.moveMember(request.applicationId(), request.targetTableId(), request.reason(), "ADMIN:" + admin.userId());
+        return queryService.table(target.getId());
+    }
+
+    @Operation(summary = "긴급 수정: 테이블 해제 (남은 참가자는 자동 재배치, 안 되면 대체 일정 안내)")
+    @PostMapping("/tables/{id}/dissolve")
+    public void dissolve(LoginUser admin, @PathVariable Long id, @RequestBody(required = false) DissolveRequest request) {
+        tableService.dissolveByAdmin(id, request == null ? null : request.reason(), "ADMIN:" + admin.userId());
+    }
+
+    @Operation(summary = "매칭 정책 조회 (가중치/최소 점수/필수 조건)")
     @GetMapping("/policy")
     public MatchingPolicy policy() {
         return policyService.get();
     }
 
-    @Operation(summary = "매칭 가중치·최소 점수 수정")
+    @Operation(summary = "매칭 가중치/최소 점수 수정")
     @PutMapping("/policy")
     public MatchingPolicy updatePolicy(LoginUser admin, @RequestBody PolicyRequest request) {
         return policyService.update(request, admin.actor());

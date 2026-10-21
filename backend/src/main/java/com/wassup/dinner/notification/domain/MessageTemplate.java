@@ -24,7 +24,7 @@ public class MessageTemplate {
 
     private String title;
 
-    @Column(length = 1000)
+    @Column(length = 4000)
     private String body;
 
     private LocalDateTime updatedAt;

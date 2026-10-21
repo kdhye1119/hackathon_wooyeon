@@ -14,6 +14,7 @@ import plateOuterInk from '../../assets/intro/plate-outer-ink.svg'
 import plateInnerInk from '../../assets/intro/plate-inner-ink.svg'
 import forkInk from '../../assets/intro/fork-ink.svg'
 import spoonInk from '../../assets/intro/spoon-ink.svg'
+import { startOAuth } from './OAuthCallback'
 import './intro.css'
 
 const INTRO_SEEN = 'wt.introSeen'
@@ -196,10 +197,10 @@ export default function IntroLogin() {
             <span />
           </div>,
           <div key="social" className="abs social-row" style={{ top: 504 }}>
-            <SocialButton provider="kakao" onClick={() => toast.show('카카오 로그인은 준비 중이에요')} />
-            <SocialButton provider="naver" onClick={() => toast.show('네이버 로그인은 준비 중이에요')} />
+            <SocialButton provider="kakao" onClick={() => startOAuth('kakao', toast)} />
+            <SocialButton provider="naver" onClick={() => startOAuth('naver', toast)} />
           </div>,
-          <button key="guest" className="abs guest-link" style={{ top: 584 }} onClick={() => navigate('/?guest=1')}>
+          <button key="guest" className="abs guest-link" style={{ top: 584 }} onClick={() => navigate('/guest')}>
             비회원으로 둘러보기
           </button>,
         ].map((el, i) => (

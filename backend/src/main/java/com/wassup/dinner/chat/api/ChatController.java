@@ -32,7 +32,7 @@ public class ChatController {
         return chatService.myRooms(user.userId());
     }
 
-    @Operation(summary = "단체방 상세: 식당·큐레이션·구성원 제한 소개·대화 주제/아이스브레이킹")
+    @Operation(summary = "단체방 상세: 식당/큐레이션/구성원 제한 소개/대화 주제/아이스브레이킹")
     @GetMapping("/{roomId}")
     public RoomDetail detail(LoginUser user, @PathVariable Long roomId) {
         return chatService.detail(roomId, user);

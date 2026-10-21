@@ -14,4 +14,6 @@ public interface ScheduledRoomPostRepository extends JpaRepository<ScheduledRoom
     List<ScheduledRoomPost> findByTableId(Long tableId);
 
     long countByStatus(ScheduledRoomPost.Status status);
+
+    List<ScheduledRoomPost> findByStatus(ScheduledRoomPost.Status status);
 }

@@ -198,7 +198,7 @@ public class ResolutionService {
         r.setChosenSlotId(slotId);
         r.setNewApplicationId(moved.getId());
         notificationService.notify(app.getUserId(), NotificationType.TRANSFERRED,
-                NotificationService.vars("slot", slot.label(), "matchAt", PaymentService.FMT.format(slot.getMatchAt())),
+                NotificationService.vars("slot", slot.label(), "matchAt", PaymentService.at(slot.getMatchAt())),
                 "app:" + app.getId(), moved.getId(), null);
     }
 
@@ -216,7 +216,7 @@ public class ResolutionService {
             states.match(app, MatchStatus.NO_MATCH, "이용권을 보관했어요. 다음 신청에 사용할 수 있어요.", actor);
         }
         notificationService.notify(app.getUserId(), NotificationType.TICKET_KEPT,
-                NotificationService.vars("expiresAt", PaymentService.FMT.format(ticket.getExpiresAt())),
+                NotificationService.vars("expiresAt", PaymentService.date(ticket.getExpiresAt())),
                 "app:" + app.getId(), app.getId(), null);
     }
 

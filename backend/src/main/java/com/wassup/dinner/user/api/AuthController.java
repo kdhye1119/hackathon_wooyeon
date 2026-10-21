@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final com.wassup.dinner.user.application.OAuthService oAuthService;
     private final AuthService authService;
 
     /** 인증번호를 응답에 담을지 (문자 발송 수단이 없는 해커톤에서는 true) */
@@ -70,7 +71,7 @@ public class AuthController {
         return new OtpResponse((int) OtpService.TTL.toSeconds(), exposeOtp ? code : null);
     }
 
-    @Operation(summary = "회원가입: 인증번호 확인 + 비밀번호 설정 (8자 이상, 영문·숫자 포함)")
+    @Operation(summary = "회원가입: 인증번호 확인 + 비밀번호 설정 (8자 이상, 영문/숫자 포함)")
     @PostMapping("/signup")
     public LoginResponse signup(@Valid @RequestBody SignupRequest request) {
         return authService.signup(request.phone(), request.code(), request.password(), request.name());
@@ -92,5 +93,20 @@ public class AuthController {
     @PostMapping("/admin/login")
     public LoginResponse adminLogin(@Valid @RequestBody AdminLoginRequest request) {
         return authService.adminLogin(request.loginId(), request.password());
+    }
+
+    public record OAuthLoginRequest(@NotBlank String code, String state) {
+    }
+
+    @Operation(summary = "소셜 로그인 이동 주소 (provider=kakao|naver, 키 미설정이면 configured=false)")
+    @GetMapping("/oauth/{provider}/url")
+    public com.wassup.dinner.user.application.OAuthService.AuthorizeUrl oauthUrl(@PathVariable String provider, @RequestParam(required = false) String state) {
+        return oAuthService.authorizeUrl(com.wassup.dinner.user.application.OAuthService.Provider.valueOf(provider.toUpperCase()), state == null ? "" : state);
+    }
+
+    @Operation(summary = "소셜 로그인 완료 (인가 코드 → 로그인/자동 가입)")
+    @PostMapping("/oauth/{provider}")
+    public LoginResponse oauthLogin(@PathVariable String provider, @Valid @RequestBody OAuthLoginRequest request) {
+        return oAuthService.login(com.wassup.dinner.user.application.OAuthService.Provider.valueOf(provider.toUpperCase()), request.code(), request.state());
     }
 }

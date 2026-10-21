@@ -31,7 +31,7 @@ public class OpenApiConfig {
 
                                 1. `POST /api/auth/test-login` 으로 토큰 발급 (운영자: 01000000000)
                                 2. 우측 상단 Authorize 에 토큰 입력
-                                3. 실시간 채팅·알림은 STOMP WebSocket `/ws` (CONNECT 헤더 Authorization: Bearer {token})
+                                3. 실시간 채팅/알림은 STOMP WebSocket `/ws` (CONNECT 헤더 Authorization: Bearer {token})
                                    - 구독: `/topic/rooms/{roomId}`, `/user/queue/notifications`
                                    - 발행: `/app/rooms/{roomId}/send`  {"content": "..."}
                                 """)

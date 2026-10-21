@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { AppBar, Badge, BellButton, Body, Button, Dialog, Footer, Screen, useToast } from '../../components/ui'
+import { AppBar, Badge, BellButton, Body, Button, Dialog, Footer, Logo, Screen, useToast } from '../../components/ui'
 import { Icon, type IconName } from '../../components/Icon'
 import { get, post } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
 import type { ApplicationView, SlotItem } from '../../lib/types'
 import { demoApplications, demoSlots, demoTable } from '../../lib/demo'
 import tableSvg from '../../assets/match/table.svg'
-import dotsSvg from '../../assets/match/dots.svg'
 import './match.css'
 
 const regionLabel = (code: string) => demoSlots.regions.find((r) => r.code === code)?.label ?? code
@@ -35,6 +34,45 @@ const SEATS_5 = [
   [76, 186],
   [38, 78],
 ]
+
+/** 식당 사진: 여러 장이면 옆으로 넘겨 보기, 운영자가 등록하지 않았으면 앱 로고 */
+function VenuePhotos({ urls, name }: { urls: string[]; name: string }) {
+  const [idx, setIdx] = useState(0)
+  if (urls.length === 0) {
+    return (
+      <div className="venue-photo-empty" aria-label={`${name} 사진 없음`}>
+        <Logo />
+      </div>
+    )
+  }
+  return (
+    <>
+      <div
+        className="venue-photo-track"
+        onScroll={(e) => {
+          const el = e.currentTarget
+          setIdx(Math.round(el.scrollLeft / Math.max(el.clientWidth, 1)))
+        }}
+      >
+        {urls.map((u, i) => (
+          <img key={u} src={u} alt={i === 0 ? `${name} 사진` : ''} loading={i === 0 ? 'eager' : 'lazy'} />
+        ))}
+      </div>
+      {urls.length > 1 && (
+        <>
+          <span className="photo-count">
+            {idx + 1} / {urls.length}
+          </span>
+          <span className="photo-dots" aria-hidden>
+            {urls.map((u, i) => (
+              <i key={u} className={i === idx ? 'on' : undefined} />
+            ))}
+          </span>
+        </>
+      )}
+    </>
+  )
+}
 
 /** 원형 테이블 둘레에 좌석 배치 (첫 번째 = 나, 12시 방향부터 시계방향) */
 function TableView({ members }: { members: RoomDetail['members'] }) {
@@ -70,9 +108,10 @@ export function MatchConfirmed() {
   const app = useApi(() => get<ApplicationView>(`/api/applications/${id}`), demoApplications.find((a) => String(a.id) === id) ?? demoApplications[0], [id])
   const table = app.data.table ?? demoTable
   const room = useApi(
-    () => (table.roomId ? get<RoomDetail>(`/api/chat/rooms/${table.roomId}`) : Promise.reject()),
+    // 실제 신청을 불러온 뒤에만 (시안 테이블의 단체방을 먼저 부르지 않게)
+    () => (!app.loading && !app.demo && table.roomId ? get<RoomDetail>(`/api/chat/rooms/${table.roomId}`) : Promise.reject()),
     { roomId: table.roomId ?? 1, members: demoMembers, curation: null },
-    [table.roomId],
+    [table.roomId, app.loading, app.demo],
   )
   const members = room.data.members.length ? room.data.members : demoMembers
   const ages = [...new Set(members.map((m) => m.ageBand).filter(Boolean))]
@@ -106,14 +145,13 @@ export function MatchConfirmed() {
 
         <div className="venue-card">
           <div className="venue-photo">
-            {app.demo && <span className="photo-count">1 / 4</span>}
+            <VenuePhotos urls={table.photoUrls ?? []} name={table.venueName} />
             {table.mapUrl && (
               <a className="map-chip" href={table.mapUrl} target="_blank" rel="noreferrer">
                 <Icon name="map-pin" size={13} />
-                네이버 지도
+                {/kakao/.test(table.mapUrl) ? '카카오맵' : /naver/.test(table.mapUrl) ? '네이버 지도' : '지도 보기'}
               </a>
             )}
-            {app.demo && <img className="photo-dots" src={dotsSvg} width={39} height={6} alt="" />}
           </div>
           <div className="venue-info">
             <div className="row" style={{ gap: 8 }}>
@@ -142,7 +180,7 @@ export function MatchConfirmed() {
             <div className="kv-row">
               <span>예약명</span>
               <b className="c-terracotta">
-                {table.reservationName ?? '우연한 식탁'} {table.tableCode}
+                {table.reservationName ?? `우연한 식탁 ${table.tableCode}`}
               </b>
             </div>
             <div className="kv-row">
@@ -231,6 +269,24 @@ export function MatchFailed() {
   // 멤버십은 매칭 실패 시 기간이 자동 연장되고 환불 대상이 아니다 (FAQ Q5)
   const membership = app.data.payment?.product?.startsWith('MEMBERSHIP') ?? false
 
+  // 취소석 제안 (STA-07): 기한 안에 참가 여부 응답
+  const respondSeat = async (accept: boolean) => {
+    setBusy(true)
+    try {
+      const next = await post<ApplicationView>(`/api/applications/${app.data.id}/seat-offer`, { accept })
+      if (accept && next.matchStatus === 'CONFIRMED') navigate(`/match/${app.data.id}`, { replace: true })
+      else {
+        app.setData(next)
+        toast.show(accept ? '그사이 자리가 마감되었어요' : '다음 대기자에게 자리를 넘겼어요')
+      }
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '응답하지 못했어요')
+      app.reload()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const choose = async (choice: 'TRANSFER' | 'KEEP_TICKET' | 'REFUND', slot?: SlotItem) => {
     setBusy(true)
     try {
@@ -257,6 +313,28 @@ export function MatchFailed() {
           <h2 className="t-display-m">매칭 실패</h2>
           <p className="t-body-s muted">{res.reason || '이번 회차에는 조건이 맞는 인원이 부족했어요'}</p>
         </div>
+
+        {app.data.seatOffer && (
+          <div className="option-card selected seat-offer">
+            <div className="row" style={{ gap: 8 }}>
+              <h3 className="t-h3" style={{ flex: 1 }}>
+                원하던 회차에 자리가 났어요
+              </h3>
+              <Badge dot={false}>결제 유지</Badge>
+            </div>
+            <p className="t-body-s">
+              {app.data.seatOffer.slotLabel} 테이블 {app.data.seatOffer.tableCode}에 취소석이 생겼어요. {fmt.deadline(app.data.seatOffer.expiresAt)}까지 응답하지 않으면 다음 대기자에게 넘어가요.
+            </p>
+            <div className="row" style={{ gap: 8 }}>
+              <Button size="S" variant="secondary" disabled={busy} onClick={() => respondSeat(false)}>
+                괜찮아요
+              </Button>
+              <Button size="S" disabled={busy} onClick={() => respondSeat(true)}>
+                참가하기
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="option-card selected">
           <div className="row" style={{ gap: 8 }}>

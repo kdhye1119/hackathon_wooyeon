@@ -15,12 +15,13 @@ type Def = { key: string; name: string; channel: string; code: string; when: str
 const DEFS: Def[] = [
   { key: 'submitted', name: '신청 완료', channel: '푸시', code: 'APPLICATION_SUBMITTED', when: '신청서 제출 즉시', via: '앱 푸시', target: '신청자 본인', vars: ['slots'], title: '신청이 접수되었어요', body: '{slots} 신청이 완료되었어요. 매칭 전까지는 앱에서 신청을 취소할 수 있어요.' },
   { key: 'paid', name: '결제 완료', channel: '푸시', code: 'PAYMENT_COMPLETED', when: '결제 승인 즉시', via: '앱 푸시', target: '결제자 본인', vars: ['product', 'matchAt'], title: '결제가 완료되었어요', body: '{product} 결제가 완료되었어요. 자동 매칭은 {matchAt}에 진행되고 결과를 바로 알려드릴게요.' },
-  { key: 'confirmed', name: '매칭 확정', channel: '푸시', code: 'MATCH_CONFIRMED', when: '테이블 자동 확정 즉시', via: '앱 푸시', target: '확정 테이블 전원', vars: ['slot', 'venue', 'time'], title: '테이블이 확정되었어요', body: '{slot} · {venue} · 집합 {time}. 앱 단체방에서 테이블 큐레이션과 안내를 확인해 보세요.' },
-  { key: 'notice', name: '단체방 공지', channel: '단체방', code: 'ROOM_NOTICE', when: '단체방 생성 즉시 · 리마인드에도 포함', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['식당명', '주소', '집합시간', '예약명'], title: '테이블이 확정되었어요!', body: '' },
-  { key: 'curation', name: '테이블 큐레이션', channel: '단체방', code: 'ROOM_CURATION', when: '테이블 자동 확정 즉시', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['인원', '연령대', '공통관심사', '성향구성', '식당명', '집합시간'], title: '오늘의 테이블 큐레이션', body: '' },
-  { key: 'reminder', name: '행사 1일 전 리마인드', channel: '푸시/단체방', code: 'EVENT_REMINDER', when: '행사 1일 전 19:30', via: '앱 푸시 + 단체방', target: '확정 테이블 전원', vars: ['slot', 'venue', 'address', 'reservationName'], title: '내일 우연한 식탁에서 만나요', body: '{slot} · {venue} ({address}) · 예약명 {reservationName}. 당일 취소 및 노쇼 시 이후 참여가 제한될 수 있어요.' },
-  { key: 'topics', name: '대화 주제/아이스브레이킹', channel: '단체방', code: 'ROOM_TOPICS', when: '행사 시작 시각 · 아래에 주제 목록이 붙어요', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['공통관심사', '대화주제', '게임'], title: '오늘의 대화 주제', body: '' },
-  { key: 'failed', name: '매칭 실패/대체 일정', channel: '푸시', code: 'MATCH_FAILED', when: '자동 매칭 실패 즉시', via: '앱 푸시', target: '미배치 신청자', vars: ['reason'], title: '이번에는 테이블이 만들어지지 않았어요', body: '{reason} 다른 일정으로 이동하거나, 이용권 보관·환불 중 하나를 선택해 주세요.' },
+  { key: 'confirmed', name: '매칭 확정', channel: '푸시', code: 'MATCH_CONFIRMED', when: '테이블 자동 확정 즉시', via: '앱 푸시', target: '확정 테이블 전원', vars: ['slot', 'venue', 'time'], title: '테이블이 확정되었어요', body: '{slot}, {venue}, 집합 {time}. 앱 단체방에서 테이블 큐레이션과 안내를 확인해 보세요.' },
+  { key: 'notice', name: '단체방 공지', channel: '단체방', code: 'ROOM_NOTICE', when: '테이블 확정, 단체방 생성 즉시', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['일시', '식당명', '주소', '지도', '예약명', '식사비', '집합시간', '지역', '큐레이션'], title: '테이블이 확정되었어요!', body: '' },
+  { key: 'curation', name: '테이블 큐레이션', channel: '단체방', code: 'ROOM_CURATION', when: '단체방 공지의 {{큐레이션}} 자리에 들어가요', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['인원', '연령대', '남', '여', '공통관심사', 'MBTI', '분위기'], title: '오늘의 테이블 큐레이션', body: '' },
+  { key: 'roomReminder', name: '행사 1일 전 리마인드', channel: '단체방', code: 'ROOM_REMINDER', when: '행사 1일 전 19:30', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['일시', '식당명', '주소', '지도', '예약명', '식사비', '집합시간'], title: '내일 우연한 식탁에서 만나요!', body: '' },
+  { key: 'reminder', name: '행사 1일 전 리마인드', channel: '푸시', code: 'EVENT_REMINDER', when: '행사 1일 전 19:30', via: '앱 푸시', target: '확정 테이블 전원', vars: ['slot', 'venue', 'address', 'reservationName'], title: '내일 우연한 식탁에서 만나요', body: '{slot}, {venue} ({address}), 예약명 {reservationName}. 당일 취소 및 노쇼 시 이후 참여가 제한될 수 있어요.' },
+  { key: 'topics', name: '대화 주제/아이스브레이킹', channel: '단체방', code: 'ROOM_TOPICS', when: '행사 시작 시각, 아래에 주제 목록이 붙어요', via: '앱 단체방 시스템 메시지', target: '확정 테이블 전원', vars: ['공통관심사', '대화주제', '게임'], title: '오늘의 대화 주제', body: '' },
+  { key: 'failed', name: '매칭 실패/대체 일정', channel: '푸시', code: 'MATCH_FAILED', when: '자동 매칭 실패 즉시', via: '앱 푸시', target: '미배치 신청자', vars: ['reason'], title: '이번에는 테이블이 만들어지지 않았어요', body: '{reason} 다른 일정으로 이동하거나, 이용권 보관/환불 중 하나를 선택해 주세요.' },
   { key: 'refund', name: '환불 요청/완료', channel: '푸시', code: 'REFUND_COMPLETED', when: '환불 완료 즉시', via: '앱 푸시', target: '환불 신청자', vars: ['amount'], title: '환불이 완료되었어요', body: '{amount}원이 원결제수단으로 환불되었어요.' },
   { key: 'feedback', name: '피드백 요청', channel: '푸시', code: 'FEEDBACK_REQUEST', when: '행사 종료 후', via: '앱 푸시', target: '참석자 전원', vars: [], title: '오늘 식탁은 어떠셨나요?', body: '만족도와 다시 만나고 싶은 분을 남겨주시면 다음 매칭에 반영돼요. 응답은 상대에게 공개되지 않아요.' },
   { key: 'next', name: '다음 모집 추천', channel: '푸시', code: 'NEXT_RECOMMENDATION', when: '새 회차 모집 시작', via: '앱 푸시', target: '재참여 의향 응답자', vars: ['slot', 'reason'], title: '다음 식탁을 추천해요', body: '{slot} 모집이 시작됐어요. {reason}' },
@@ -28,8 +29,16 @@ const DEFS: Def[] = [
 
 /** 미리보기 예시 값 (T-1022-EJ-3) */
 const SAMPLE: Record<string, string> = {
+  일시: '10/22 (목) 19:30',
+  지역: '을지로/종로',
+  지도: '지도에서 보기',
+  식사비: '1인 2~3만원',
+  남: '2',
+  여: '3',
+  MBTI: 'E 2, I 3 — 이끄는 분과 들어주는 분이 고르게 섞였어요',
+  분위기: '깊은 대화를 좋아함, 경청을 잘 함',
   인원: '5',
-  연령대: '27~33세',
+  연령대: '20대 후반 ~ 30대 초반',
   공통관심사: '전시, 여행, 맛집',
   성향구성: '먼저 말을 거는 분과 잘 들어주는 분',
   식당명: '을지 화로',
@@ -38,39 +47,53 @@ const SAMPLE: Record<string, string> = {
   예약명: '우연한 식탁 E-1022-3',
   대화주제: '최근 본 전시 중 마음에 남은 작품은?',
   게임: '두 개의 진실, 하나의 거짓',
-  slots: '10.22 (목) 19:30 을지로/종로',
-  slot: '10.22 (목) 19:30 을지로/종로',
+  slots: '10/22 (목) 19:30 을지로/종로',
+  slot: '10/22 (목) 19:30 을지로/종로',
   product: '1회권',
   matchAt: '10.20 24:00',
   venue: '을지 화로',
   time: '19:20',
   address: '서울 중구 을지로 OO길 12, 2층',
   reservationName: '우연한 식탁 E-1022-3',
-  reason: '같은 날짜·지역에 조건을 만족하는 테이블이 없었어요.',
+  reason: '같은 날짜/지역에 조건을 만족하는 테이블이 없었어요.',
   amount: '8,000',
 }
+/** 단체방 메시지에 템플릿 앞뒤로 자동으로 붙는 부분 (백엔드 TableBriefing 과 같은 구성) */
+const TOPIC_LIST = ['1. 최근 본 전시 중 마음에 남은 작품은?', '2. 다시 가고 싶은 여행지와 그곳에서의 한 장면은?', '3. 요즘 나를 가장 설레게 하는 일은 무엇인가요?', '', '🎮 아이스브레이킹', '/ 🎲 두 개의 진실, 하나의 거짓'].join('\n')
+
 const fill = (s: string) => s.replace(/\{\{(.+?)\}\}|\{(\w+)\}/g, (m, a, b) => SAMPLE[a ?? b] ?? m)
 /** 푸시 템플릿 변수는 {x}, 단체방 템플릿 변수는 {{한글}} */
-const varToken = (v: string) => (/^[a-zA-Z]/.test(v) ? `{${v}}` : `{{${v}}}`)
+const varToken = (v: string) => (/^[a-z]/.test(v) ? `{${v}}` : `{{${v}}}`)
 
 /** 대화 주제 라이브러리 카테고리: 관심사별 + 모든 테이블 공통 + 아이스브레이킹 게임 */
-const TOPIC_CATS: [string, string][] = [...INTERESTS.map(([c, l]) => [c, l.replace(/ \(.*\)$/, '')] as [string, string]), ['GENERAL', '모든 테이블 공통'], ['ICEBREAKER', '아이스브레이킹 게임']]
+/** 테이블 유형: 구성원 다수가 이 성향이면 노출 */
+const TABLE_TYPES: [string, string][] = [
+  ['TRAIT_DEEP_TALK', '깊은 대화 테이블'],
+  ['TRAIT_HUMOR', '유머 있는 테이블'],
+  ['TRAIT_ENERGETIC', '활기찬 테이블'],
+  ['TRAIT_CALM', '잔잔한 테이블'],
+  ['TRAIT_LISTENER', '경청하는 테이블'],
+  ['TRAIT_LEADER', '이끄는 사람 많은 테이블'],
+]
+const TOPIC_CATS: [string, string][] = [...INTERESTS.map(([c, l]) => [c, l.replace(/ \(.*\)$/, '')] as [string, string]), ...TABLE_TYPES, ['GENERAL', '모든 테이블 공통'], ['ICEBREAKER', '아이스브레이킹 게임']]
 const catLabel = (c: string) => TOPIC_CATS.find(([k]) => k === c)?.[1] ?? c
 type TopicLib = { builtIn: Record<string, number>; custom: { id: number; category: string; text: string }[] }
 const DEMO_LIB: TopicLib = { builtIn: { FOOD_CAFE: 2, EXHIBITION_ART: 2, TRAVEL: 2, SELF_DEVELOPMENT: 2, GENERAL: 6, ICEBREAKER: 4 }, custom: [] }
 
 /** 발송 이력 (같은 템플릿·같은 분 발송을 한 줄로 묶음) */
-type Hist = { key: string; at: string; atMs: number; name: string; to: string; channel: string; ok: number; total: number; failedIds: number[]; retried: boolean }
+type Hist = { key: string; at: string; atMs: number; name: string; to: string; channel: string; ok: number; total: number; failedIds: number[]; failedPostIds: number[]; retried: boolean }
+type RoomLog = { key: string; kind: 'NOTICE' | 'REMINDER' | 'CONTENT'; roomId: number; at: string; status: 'SENT' | 'FAILED'; postId: number | null; attempts: number }
+const ROOM_NAME: Record<RoomLog['kind'], string> = { NOTICE: '단체방 공지, 큐레이션', REMINDER: '행사 1일 전 리마인드', CONTENT: '대화 주제/아이스브레이킹' }
 const NAME_BY_TYPE: Record<string, string> = Object.fromEntries(DEFS.filter((d) => d.code).map((d) => [d.code!, d.name]))
 Object.assign(NAME_BY_TYPE, { PAYMENT_PENDING: '결제 안내', REALLOCATING: '재배치 안내', TRANSFERRED: '대체 일정 안내', TICKET_KEPT: '이용권 보관', REFUND_REQUESTED: '환불 요청/완료', CANCELED: '신청 취소', TABLE_CHANGED: '테이블 변경', FEEDBACK_REMINDER: '피드백 요청' })
-const CHANNEL_BY_TYPE = (t: string) => (t === 'EVENT_REMINDER' ? '푸시/단체방' : '푸시')
+const CHANNEL_BY_TYPE = (_t: string) => '푸시'
 
 const DEMO_HIST: Hist[] = [
   ['10.21 08:00', '대체 일정 안내', 'ALTERNATIVE_OFFERED 9명', '푸시', 9, 9, false],
   ['10.20 24:03', '테이블 큐레이션', '확정 19테이블', '단체방', 19, 19, false],
   ['10.20 24:03', '매칭 확정', '96명', '푸시', 95, 96, true],
   ['10.25 19:30', '행사 1일 전 리마인드', '10.15 회차, 노OO', '푸시', 0, 1, false],
-].map(([at, name, to, channel, ok, total, retried], i) => ({ key: String(i), at: at as string, atMs: i, name: name as string, to: to as string, channel: channel as string, ok: ok as number, total: total as number, failedIds: ok === 0 ? [3] : [], retried: retried as boolean }))
+].map(([at, name, to, channel, ok, total, retried], i) => ({ key: String(i), at: at as string, atMs: i, name: name as string, to: to as string, channel: channel as string, ok: ok as number, total: total as number, failedIds: ok === 0 ? [3] : [], failedPostIds: [], retried: retried as boolean }))
 
 const p2 = (n: number) => String(n).padStart(2, '0')
 const md = (d: Date) => `${p2(d.getMonth() + 1)}.${p2(d.getDate())}`
@@ -92,6 +115,7 @@ export default function Messages() {
   const toast = useToast()
   const templates = useAdminApi(() => get<Template[]>('/api/admin/templates'), adminDemo.templates)
   const logs = useAdminApi(() => get<NotificationLog[]>('/api/admin/notifications'), adminDemo.notifications)
+  const roomLogs = useAdminApi(() => get<RoomLog[]>('/api/admin/room-messages'), [] as RoomLog[])
   const demo = logs.demo
   const [period, setPeriod] = useState<Period>('week')
   // 기준일 기본값 = 서비스 시각 (시연 시각 이동 반영)
@@ -114,6 +138,24 @@ export default function Messages() {
     setTitle(saved.title)
     setBody(saved.body)
   }, [selKey, saved.title, saved.body])
+
+  /** 미리보기: 실제로 나가는 메시지 전체 (단체방은 고정 안내와 다른 템플릿까지 합쳐서) */
+  const tpl = (code: string) => {
+    if (code === def.code) return { title, body }
+    const t = templates.data.find((x) => x.code === code) ?? DEFS.find((d) => d.code === code)
+    return { title: t?.title ?? '', body: t?.body ?? '' }
+  }
+  const preview = (() => {
+    if (def.code === 'ROOM_NOTICE' || def.code === 'ROOM_CURATION') {
+      const n = tpl('ROOM_NOTICE')
+      const c = tpl('ROOM_CURATION')
+      const curation = `✨ ${fill(c.title)}\n${fill(c.body)}`
+      return { head: `🎉 ${fill(n.title)}`, body: fill(n.body.replace(/\{\{\s*큐레이션\s*\}\}/g, () => curation)) }
+    }
+    if (def.code === 'ROOM_REMINDER') return { head: `⏰ ${fill(title)}`, body: fill(body) }
+    if (def.code === 'ROOM_TOPICS') return { head: `💬 ${fill(title)}`, body: [body.trim() ? fill(body) : '', TOPIC_LIST].filter(Boolean).join('\n\n') }
+    return { head: fill(title), body: fill(body) }
+  })()
 
   const insertVar = (v: string) => setBody((b) => `${b}${varToken(v)}`)
   const upsert = (next: Template) => templates.setData(templates.data.some((t) => t.code === def.code) ? templates.data.map((t) => (t.code === def.code ? next : t)) : [...templates.data, next])
@@ -146,7 +188,7 @@ export default function Messages() {
       .forEach((n) => {
         const t = new Date(n.sentAt ?? n.scheduledAt)
         const k = `${n.type}|${t.toISOString().slice(0, 16)}`
-        const h = g.get(k) ?? { key: k, at: `${md(t)} ${p2(t.getHours())}:${p2(t.getMinutes())}`, atMs: t.getTime(), name: NAME_BY_TYPE[n.type] ?? n.type, to: '', channel: CHANNEL_BY_TYPE(n.type), ok: 0, total: 0, failedIds: [], retried: false }
+        const h = g.get(k) ?? { key: k, at: `${md(t)} ${p2(t.getHours())}:${p2(t.getMinutes())}`, atMs: t.getTime(), name: NAME_BY_TYPE[n.type] ?? n.type, to: '', channel: CHANNEL_BY_TYPE(n.type), ok: 0, total: 0, failedIds: [], failedPostIds: [], retried: false }
         h.total++
         if (n.status === 'SENT' || n.status === 'READ') h.ok++
         if (n.status === 'FAILED') h.failedIds.push(n.id)
@@ -154,16 +196,36 @@ export default function Messages() {
         h.to = `${h.total}명`
         g.set(k, h)
       })
+    // 단체방 자동 메시지 (같은 종류·같은 분에 올라간 단체방을 한 줄로)
+    roomLogs.data
+      .filter((m) => {
+        const t = new Date(m.at)
+        return t >= r.start && t < r.end
+      })
+      .forEach((m) => {
+        const t = new Date(m.at)
+        const k = `ROOM_${m.kind}|${t.toISOString().slice(0, 16)}`
+        const h = g.get(k) ?? { key: k, at: `${md(t)} ${p2(t.getHours())}:${p2(t.getMinutes())}`, atMs: t.getTime(), name: ROOM_NAME[m.kind], to: '', channel: '단체방', ok: 0, total: 0, failedIds: [], failedPostIds: [], retried: false }
+        h.total++
+        if (m.status === 'SENT') h.ok++
+        else if (m.postId) h.failedPostIds.push(m.postId)
+        h.to = `단체방 ${h.total}개`
+        g.set(k, h)
+      })
     return [...g.values()].sort((a, b) => b.atMs - a.atMs)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demo, logs.data, r.start.getTime(), r.end.getTime()])
-  const shown = hist.filter((h) => (resultF === 'all' ? true : resultF === 'fail' ? h.failedIds.length > 0 : h.failedIds.length === 0) && (channelF === 'all' || h.channel.includes(channelF)))
+  }, [demo, logs.data, roomLogs.data, r.start.getTime(), r.end.getTime()])
+  const shown = hist.filter((h) => (resultF === 'all' ? true : resultF === 'fail' ? h.failedIds.length + h.failedPostIds.length > 0 : h.failedIds.length + h.failedPostIds.length === 0) && (channelF === 'all' || h.channel.includes(channelF)))
 
   const retry = async (h: Hist) => {
     try {
-      if (!demo) await Promise.all(h.failedIds.map((id) => post(`/api/admin/notifications/${id}/retry`)))
-      toast.show(`${h.failedIds.length}건 다시 보냈어요`)
+      if (!demo) {
+        await Promise.all(h.failedIds.map((id) => post(`/api/admin/notifications/${id}/retry`)))
+        await Promise.all(h.failedPostIds.map((id) => post(`/api/admin/room-posts/${id}/retry`)))
+      }
+      toast.show(`${h.failedIds.length + h.failedPostIds.length}건 다시 보냈어요`)
       logs.reload()
+      roomLogs.reload()
     } catch (e) {
       toast.show(e instanceof Error ? e.message : '다시 보내지 못했어요')
     }
@@ -252,7 +314,7 @@ export default function Messages() {
               <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                 {def.vars.map((v) => (
                   <button key={v} className="adm-badge-btn" onClick={() => insertVar(v)} title="본문 끝에 넣기">
-                    {`{{${v}}}`}
+                    {varToken(v)}
                   </button>
                 ))}
               </div>
@@ -260,7 +322,7 @@ export default function Messages() {
           )}
           <div className="adm-msg-body">
             <input value={title} onChange={(e) => setTitle(e.target.value)} aria-label="제목" />
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} aria-label="본문" rows={4} />
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} aria-label="본문" rows={def.channel === '단체방' ? 16 : 4} />
           </div>
           <div className="row" style={{ gap: 8, justifyContent: 'flex-end' }}>
             <button className="adm-outline" onClick={reset}>
@@ -273,13 +335,13 @@ export default function Messages() {
         </section>
 
         <aside className="adm-msg-preview">
-          <small>{demo ? '미리보기, T-1022-EJ-3' : '미리보기, 예시 값'}</small>
+          <small>{def.channel === '단체방' ? '미리보기, 단체방에 실제로 올라가는 전체 메시지 (예시 값)' : '미리보기, 예시 값'}</small>
           <div className="bubble">
             <p className="head">
               <Icon name="sparkle" size={16} />
-              {fill(title)}
+              {preview.head}
             </p>
-            <p>{fill(body)}</p>
+            <p>{preview.body}</p>
           </div>
           <div className="lib">
             <b>대화 주제 라이브러리</b>
@@ -359,16 +421,16 @@ export default function Messages() {
           rowKey={(h) => h.key}
           empty="이 기간에 보낸 메시지가 없어요"
           columns={[
-            { key: 'at', label: '시각', width: 110, render: (h) => <span className={cx('nowrap', h.failedIds.length > 0 && 'adm-msg-fail')}>{h.at}</span>, sort: (h) => h.atMs },
+            { key: 'at', label: '시각', width: 110, render: (h) => <span className={cx('nowrap', h.failedIds.length + h.failedPostIds.length > 0 && 'adm-msg-fail')}>{h.at}</span>, sort: (h) => h.atMs },
             { key: 'name', label: '템플릿', width: 170, render: (h) => h.name, sort: (h) => h.name },
             { key: 'to', label: '수신', width: 190, render: (h) => h.to, sort: (h) => h.total },
             { key: 'ch', label: '채널', width: 110, render: (h) => h.channel, sort: (h) => h.channel },
-            { key: 'res', label: '결과', width: 180, render: (h) => (h.failedIds.length ? (h.ok ? `${h.ok} / ${h.total}, ${h.failedIds.length}건 실패` : '재시도 3회 실패') : `${h.ok} / ${h.total}${h.retried ? ', 재시도 후 성공' : ' 성공'}`), sort: (h) => h.ok / Math.max(h.total, 1) },
+            { key: 'res', label: '결과', width: 180, render: (h) => (h.failedIds.length + h.failedPostIds.length ? (h.ok ? `${h.ok} / ${h.total}, ${h.failedIds.length + h.failedPostIds.length}건 실패` : '재시도 3회 실패') : `${h.ok} / ${h.total}${h.retried ? ', 재시도 후 성공' : ' 성공'}`), sort: (h) => h.ok / Math.max(h.total, 1) },
             {
               key: 'st',
               label: '',
               render: (h) =>
-                h.failedIds.length ? (
+                h.failedIds.length + h.failedPostIds.length ? (
                   <div className="row" style={{ gap: 6 }}>
                     <Badge tone="경고" dot={false}>
                       예외로 이동

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AdminLayout, DataTable, DemoNotice, Panel, Seg, useAdminApi, useServiceNow } from '../AdminLayout'
 import { Badge, Button } from '../../components/ui'
 import { Icon } from '../../components/Icon'
-import { get } from '../../lib/api'
+import { download, get } from '../../lib/api'
 import type { ApplicantRow, Dashboard as DashboardDto, SlotSummary } from '../types'
 import { adminDemo, slotDayLabel } from '../demo'
 
@@ -157,7 +157,7 @@ export default function Dashboard() {
     ['조건 충돌', '연령 조건', pending.unresolvedConflicts, 'UNRESOLVED_CONFLICT'],
     ['식당 부족', '식당 미배정 테이블', pending.tablesWithoutVenue, 'VENUE_SHORTAGE'],
     ['알림 발송 실패', '리마인드 3회 실패', pending.messageFailures, 'NOTIFICATION_FAILED'],
-    ['노쇼 후보', '당일 취소·노쇼 검토', pending.lateCancelOrNoShowCandidates, 'NO_SHOW_REVIEW'],
+    ['노쇼 후보', '당일 취소/노쇼 검토', pending.lateCancelOrNoShowCandidates, 'NO_SHOW_REVIEW'],
     ['미처리 신고', '안전 신고', pending.openReports, 'SAFETY_REPORT'],
     ['환불 실패', '', pending.refundFailures, 'REFUND_FAILED'],
   ]
@@ -266,9 +266,14 @@ export default function Dashboard() {
 
       <div className="adm-section-head">
         <h2 className="t-h2">회차별 현황</h2>
-        <Button size="S" variant="secondary" style={{ borderColor: 'var(--ink)' }} onClick={() => window.open('/api/admin/applications/export.csv', '_blank')}>
-          CSV 내보내기
-        </Button>
+        <div className="row" style={{ gap: 8 }}>
+          <Button size="S" variant="secondary" style={{ borderColor: 'var(--ink)' }} onClick={() => download('/api/admin/applications/export.csv', 'applications.csv').catch(() => undefined)}>
+            신청자 CSV
+          </Button>
+          <Button size="S" variant="secondary" style={{ borderColor: 'var(--ink)' }} onClick={() => download('/api/admin/tables/export.csv', 'tables.csv').catch(() => undefined)}>
+            테이블 결과 CSV
+          </Button>
+        </div>
       </div>
       <DataTable
         rows={byDate}

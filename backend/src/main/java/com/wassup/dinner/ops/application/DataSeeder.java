@@ -57,6 +57,13 @@ public class DataSeeder implements ApplicationRunner {
             adminRepository.save(new AdminAccount("admin", passwordHasher.hash(adminPassword), "와썹하우스 운영자", clock.now()));
             log.info("운영자 계정 생성: admin / {}", adminPassword);
         }
+        // 권한별 접근 통제 시연용 계정
+        if (adminRepository.findByLoginId("operator").isEmpty()) {
+            adminRepository.save(new AdminAccount("operator", passwordHasher.hash("operator1234"), "현장 운영 매니저", AdminAccount.Role.OPERATOR, clock.now()));
+        }
+        if (adminRepository.findByLoginId("viewer").isEmpty()) {
+            adminRepository.save(new AdminAccount("viewer", passwordHasher.hash("viewer1234"), "조회 전용 (파트너)", AdminAccount.Role.VIEWER, clock.now()));
+        }
         policyService.get();
         for (NotificationType t : NotificationType.values()) {
             if (templateRepository.findByCode(t.name()).isEmpty()) {
@@ -84,7 +91,7 @@ public class DataSeeder implements ApplicationRunner {
     }
 
     private void seedVenues() {
-        venue("모노키친 합정", Region.HONGDAE_HAPJEONG, "서울 마포구 양화로 45", PriceRange.P20_30, "1인 2~3만원 (파스타·리조또)", 2);
+        venue("모노키친 합정", Region.HONGDAE_HAPJEONG, "서울 마포구 양화로 45", PriceRange.P20_30, "1인 2~3만원 (파스타/리조또)", 2);
         venue("하루식탁 홍대", Region.HONGDAE_HAPJEONG, "서울 마포구 와우산로 21", PriceRange.P10_20, "1인 1~2만원 (한식 정식)", 2);
         venue("오븐앤테이블 잠실", Region.JAMSIL, "서울 송파구 백제고분로 41", PriceRange.P20_30, "1인 2~3만원 (화덕피자)", 2);
         venue("송리단 브런치하우스", Region.JAMSIL, "서울 송파구 오금로 18", PriceRange.P10_20, "1인 1~2만원 (브런치)", 1);

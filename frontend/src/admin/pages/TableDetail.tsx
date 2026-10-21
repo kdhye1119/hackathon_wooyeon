@@ -130,7 +130,7 @@ export default function TableDetail() {
   const isFemale = (g: string) => g === 'FEMALE' || g === '여'
   const ei = t.members.reduce((n, x) => (x.mbti?.startsWith('E') ? n + 1 : n), 0)
   const mbtiText = demo ? t.mbtiSummary : `E ${ei}, I ${t.members.filter((x) => x.mbti?.startsWith('I')).length}`
-  const interestText = t.commonInterests.map((c) => labelOf(INTERESTS, c).split(/[/·(]/)[0].trim()).join(', ')
+  const interestText = t.commonInterests.map((c) => labelOf(INTERESTS, c).split(/[//(]/)[0].trim()).join(', ')
   const region = slotRegion(t.slotLabel)
   const ageMin = 2026 - t.maxBirthYear
   const ageMax = 2026 - t.minBirthYear
@@ -183,7 +183,48 @@ export default function TableDetail() {
       toast.show(e instanceof Error ? e.message : '바꾸지 못했어요')
     }
   }
-  const notYet = () => toast.show('수동 조정은 아직 서버에 연결되지 않았어요. 예외 처리함에서 처리해 주세요')
+  // ---- 운영자 긴급 수정 (MAT-14): 참가자 이동 / 분리·병합 / 해제. 모든 변경은 신청 이력에 운영자로 남는다
+  const slotTables = useAdminApi(() => get<{ tableId: number; tableCode: string; status: string; memberCount: number }[]>(`/api/admin/tables?slotId=${t.slotId}`), [], [t.slotId])
+  const others = slotTables.data.filter((x) => x.tableId !== t.tableId && x.status === 'CONFIRMED')
+  const [edit, setEdit] = useState<null | 'move' | 'split' | 'merge' | 'dissolve'>(null)
+  const [picked, setPicked] = useState<number[]>([])
+  const [target, setTarget] = useState<number | null>(null)
+  const [reason, setReason] = useState('')
+  const [editing, setEditing] = useState(false)
+  const openEdit = (m: 'move' | 'split' | 'merge' | 'dissolve') => {
+    if (demo) return toast.show('시안 화면에서는 바꿀 수 없어요')
+    setEdit(m)
+    setPicked([])
+    setTarget(null)
+    setReason('')
+  }
+  const runEdit = async () => {
+    setEditing(true)
+    try {
+      if (edit === 'dissolve') {
+        await post(`/api/admin/tables/${t.tableId}/dissolve`, { reason })
+        toast.show('테이블을 해제했어요. 참가자는 재배치되거나 대체 일정 안내를 받아요')
+        window.setTimeout(() => navigate('/admin/matching'), 900)
+        return
+      }
+      // 병합: 전원을 대상 테이블로 / 이동: 고른 참가자를 대상 테이블로 / 분리: 고른 참가자를 새 테이블로
+      const ids = edit === 'merge' ? t.members.map((m) => m.applicationId) : picked
+      let dest: number | null = edit === 'split' ? null : target
+      for (const appId of ids) {
+        const r = await post<{ tableId: number }>(`/api/admin/tables/${t.tableId}/move`, { applicationId: appId, targetTableId: dest, reason })
+        dest = r.tableId
+      }
+      toast.show(edit === 'merge' ? '테이블을 합쳤어요' : edit === 'split' ? '새 테이블로 분리했어요' : '참가자를 옮겼어요')
+      setEdit(null)
+      if (dest) window.setTimeout(() => navigate(`/admin/tables/${dest}`), 700)
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '바꾸지 못했어요')
+    } finally {
+      setEditing(false)
+    }
+  }
+  const editReady =
+    edit === 'dissolve' ? reason.trim().length > 0 : edit === 'merge' ? target !== null : edit === 'split' ? picked.length > 0 : picked.length > 0 && target !== null
 
   return (
     <AdminLayout title="테이블 상세" onBack={() => navigate('/admin/matching')}>
@@ -205,13 +246,16 @@ export default function TableDetail() {
             {slotDayLabel(t.slotLabel)} {t.slotLabel.split(' ')[2]}, {region}, {t.memberCount}명
           </p>
         </div>
-        <button className="adm-outline" onClick={notYet}>
+        <button className="adm-outline" disabled={!demo && t.status !== 'CONFIRMED'} title={!demo && t.status !== 'CONFIRMED' ? '확정 상태 테이블만 수정할 수 있어요' : undefined} onClick={() => openEdit('move')}>
           참가자 이동
         </button>
-        <button className="adm-outline" onClick={notYet}>
-          테이블 분리/병합
+        <button className="adm-outline" disabled={!demo && t.status !== 'CONFIRMED'} title={!demo && t.status !== 'CONFIRMED' ? '확정 상태 테이블만 수정할 수 있어요' : undefined} onClick={() => openEdit('split')}>
+          테이블 분리
         </button>
-        <button className="adm-outline" onClick={notYet}>
+        <button className="adm-outline" disabled={!demo && t.status !== 'CONFIRMED'} title={!demo && t.status !== 'CONFIRMED' ? '확정 상태 테이블만 수정할 수 있어요' : undefined} onClick={() => openEdit('merge')}>
+          테이블 병합
+        </button>
+        <button className="adm-outline" disabled={!demo && t.status !== 'CONFIRMED'} title={!demo && t.status !== 'CONFIRMED' ? '확정 상태 테이블만 수정할 수 있어요' : undefined} onClick={() => openEdit('dissolve')}>
           테이블 해제
         </button>
       </div>
@@ -254,7 +298,7 @@ export default function TableDetail() {
                 { key: 'birth', label: '출생', width: 64, render: (x) => 2026 - x.age, sort: (x) => -x.age },
                 { key: 'g', label: '성별', width: 48, render: (x) => (isFemale(x.gender) ? '여' : '남'), sort: (x) => x.gender },
                 { key: 'mbti', label: 'MBTI', width: 50, render: (x) => x.mbti, sort: (x) => x.mbti },
-                { key: 'int', label: '관심사', width: 120, render: (x) => <span className="ellipsis" style={{ display: 'block', maxWidth: 220 }}>{x.interests.map((s) => s.split(/[/·(]/)[0].trim()).join('/')}</span>, sort: (x) => x.interests.join() },
+                { key: 'int', label: '관심사', width: 120, render: (x) => <span className="ellipsis" style={{ display: 'block', maxWidth: 220 }}>{x.interests.map((s) => s.split(/[//(]/)[0].trim()).join('/')}</span>, sort: (x) => x.interests.join() },
                 {
                   key: 'att',
                   label: '참석',
@@ -361,6 +405,53 @@ export default function TableDetail() {
           </Button>
           <Button size="S" disabled={!venueId} onClick={assign}>
             변경
+          </Button>
+        </div>
+      </Dialog>
+      <Dialog open={edit !== null} onClose={() => setEdit(null)}>
+        <h3 className="dialog-title">
+          {edit === 'move' ? '참가자 이동' : edit === 'split' ? '테이블 분리' : edit === 'merge' ? '테이블 병합' : '테이블 해제'}
+        </h3>
+        <p className="t-body-s muted" style={{ textAlign: 'center' }}>
+          {edit === 'move' && '같은 회차의 다른 확정 테이블로 옮겨요. 두 단체방에 안내가 자동으로 올라가요.'}
+          {edit === 'split' && '고른 참가자로 새 테이블을 만들어요. 식당과 단체방이 자동으로 배정돼요.'}
+          {edit === 'merge' && '이 테이블 전원을 고른 테이블로 옮겨요. 이 테이블의 단체방은 종료돼요.'}
+          {edit === 'dissolve' && '남은 참가자는 같은 회차 다른 테이블로 재배치하고, 안 되면 대체 일정을 안내해요.'}
+        </p>
+        {(edit === 'move' || edit === 'split') && (
+          <div className="stack" style={{ gap: 6, width: '100%' }}>
+            <small className="t-caption muted">옮길 참가자</small>
+            {t.members.map((m) => (
+              <button
+                key={m.applicationId}
+                className="adm-pill"
+                aria-pressed={picked.includes(m.applicationId)}
+                style={{ textAlign: 'left' }}
+                onClick={() => setPicked((p) => (p.includes(m.applicationId) ? p.filter((x) => x !== m.applicationId) : [...p, m.applicationId]))}
+              >
+                {m.name} <span className="t-caption muted">{2026 - m.age}년생, {m.mbti}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {(edit === 'move' || edit === 'merge') && (
+          <div className="stack" style={{ gap: 6, width: '100%' }}>
+            <small className="t-caption muted">옮길 테이블</small>
+            {others.length === 0 && <p className="t-body-s muted">같은 회차에 다른 확정 테이블이 없어요</p>}
+            {others.map((o) => (
+              <button key={o.tableId} className="adm-pill" aria-pressed={target === o.tableId} style={{ textAlign: 'left' }} onClick={() => setTarget(o.tableId)}>
+                테이블 {o.tableCode} <span className="t-caption muted">{o.memberCount}명</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <input className="adm-input" style={{ width: '100%' }} placeholder={edit === 'dissolve' ? '해제 사유 (필수)' : '사유 (이력에 남아요)'} value={reason} onChange={(e) => setReason(e.target.value)} />
+        <div className="row" style={{ gap: 8 }}>
+          <Button variant="secondary" size="S" onClick={() => setEdit(null)}>
+            취소
+          </Button>
+          <Button size="S" variant={edit === 'dissolve' ? 'danger' : 'primary'} disabled={!editReady || editing} onClick={runEdit}>
+            {edit === 'dissolve' ? '해제' : '적용'}
           </Button>
         </div>
       </Dialog>

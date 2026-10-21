@@ -97,7 +97,7 @@ public class MatchingEngine {
             for (Candidate c : left) {
                 lastFailure.put(c.applicationId(), pool.size() < ctx.minTableSize()
                         ? "1지망 회차 신청 인원 부족(" + pool.size() + "명)"
-                        : "1지망 회차에서 나이·제외 조건을 만족하는 4명 이상 조합 없음");
+                        : "1지망 회차에서 나이/제외 조건을 만족하는 4명 이상 조합 없음");
             }
             leftovers.addAll(left);
             improve(slotId);
@@ -417,10 +417,10 @@ public class MatchingEngine {
             }
         }
         if (!anyApplicants) {
-            return "신청하신 날짜·지역의 신청 인원이 최소 " + ctx.minTableSize() + "명에 미치지 못했어요.";
+            return "신청하신 날짜/지역의 신청 인원이 최소 " + ctx.minTableSize() + "명에 미치지 못했어요.";
         }
         if (!anyPool) {
-            return "신청하신 날짜·지역에 나이 차이 " + ctx.maxAgeGap() + "살 이내로 함께할 수 있는 참가자가 부족했어요.";
+            return "신청하신 날짜/지역에 나이 차이 " + ctx.maxAgeGap() + "살 이내로 함께할 수 있는 참가자가 부족했어요.";
         }
         return "조건에 맞는 테이블의 남은 자리가 없거나, 조합 기준 점수를 충족하는 테이블을 만들지 못했어요.";
     }

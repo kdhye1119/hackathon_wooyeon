@@ -1,3 +1,4 @@
+import { userKey } from '../../lib/api'
 // 신청 3단계(매칭 선호 → 일정/지역 → 이용권/결제) 사이에서 유지하는 입력값
 export type ApplyState = {
   desiredTypes: string[]
@@ -16,7 +17,7 @@ export type ApplyState = {
   policyChecked: boolean
 }
 
-const KEY = 'wt.apply'
+const KEY = () => userKey('wt.apply')
 export const initialApply: ApplyState = {
   desiredTypes: [],
   priceRanges: [],
@@ -30,13 +31,16 @@ export const initialApply: ApplyState = {
   regions: [],
   dates: [],
   otherRegion: '',
-  product: 'SINGLE',
-  method: 'CARD',
+  // 이용권·결제 수단도 직접 고르게 (기본 선택 없음)
+  product: '',
+  method: '',
   policyChecked: false,
 }
 
 /** 데모(시안) 모드에서만 Figma 예시 선택값을 채운다 */
 export const demoApplyDefaults: Partial<ApplyState> = {
+  product: 'SINGLE',
+  method: 'CARD',
   desiredTypes: ['DIFFERENT', 'DEEP_TALK'],
   priceRanges: ['P20_30'],
   cuisines: ['한식', '일식'],
@@ -50,7 +54,7 @@ export const demoApplyDefaults: Partial<ApplyState> = {
 
 export function loadApply(): ApplyState {
   try {
-    const raw = sessionStorage.getItem(KEY)
+    const raw = sessionStorage.getItem(KEY())
     return raw ? { ...initialApply, ...JSON.parse(raw) } : { ...initialApply }
   } catch {
     return { ...initialApply }
@@ -59,7 +63,7 @@ export function loadApply(): ApplyState {
 
 export function saveApply(s: ApplyState) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(s))
+    sessionStorage.setItem(KEY(), JSON.stringify(s))
   } catch {
     /* noop */
   }
@@ -68,21 +72,21 @@ export function saveApply(s: ApplyState) {
 /** 지난 신청 내용이 있는지 (3-2 '지난 신청 내용을 불러왔어요') */
 export function hasPrevious() {
   try {
-    return localStorage.getItem('wt.applyLast') !== null
+    return localStorage.getItem(userKey('wt.applyLast')) !== null
   } catch {
     return false
   }
 }
 export function rememberLast(s: ApplyState) {
   try {
-    localStorage.setItem('wt.applyLast', JSON.stringify(s))
+    localStorage.setItem(userKey('wt.applyLast'), JSON.stringify(s))
   } catch {
     /* noop */
   }
 }
 export function loadLast(): Partial<ApplyState> | null {
   try {
-    const raw = localStorage.getItem('wt.applyLast')
+    const raw = localStorage.getItem(userKey('wt.applyLast'))
     return raw ? JSON.parse(raw) : null
   } catch {
     return null

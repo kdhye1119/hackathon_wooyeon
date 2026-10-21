@@ -91,7 +91,7 @@ public class ApplicationService {
             }
         }
         if (slotIds.isEmpty()) {
-            throw new ApiException(ErrorCode.SLOT_CLOSED, "선택한 날짜·지역에 신청 가능한 회차가 없습니다.");
+            throw new ApiException(ErrorCode.SLOT_CLOSED, "선택한 날짜/지역에 신청 가능한 회차가 없습니다.");
         }
         Set<Long> active = applicationRepository.findByUserIdOrderByIdDesc(userId).stream()
                 .filter(Application::isActive).flatMap(a -> a.getSlotIds().stream()).collect(Collectors.toSet());
@@ -119,7 +119,7 @@ public class ApplicationService {
             app.setPaymentId(payment.getId());
             notificationService.notify(userId, NotificationType.PAYMENT_PENDING,
                     NotificationService.vars("product", r.product().getLabel(), "amount", String.format("%,d", r.product().getPrice()),
-                            "deadline", PaymentService.FMT.format(earliest(slotIds).getApplyDeadline())),
+                            "deadline", PaymentService.at(earliest(slotIds).getApplyDeadline())),
                     "app:" + app.getId(), app.getId(), null);
         }
         states.app(app, ApplicationStatus.SUBMITTED, "신청 제출", actor);
@@ -182,7 +182,7 @@ public class ApplicationService {
                 tableService.handleSeatReleased(a.getTableId());
             }
             case ALTERNATIVE_OFFERED, NO_MATCH -> throw new ApiException(ErrorCode.INVALID_STATE,
-                    "매칭 실패 신청은 일정 이동·이용권 보관·환불 중에서 선택해 주세요.");
+                    "매칭 실패 신청은 일정 이동/이용권 보관/환불 중에서 선택해 주세요.");
             default -> throw new ApiException(ErrorCode.INVALID_STATE, "매칭이 진행 중이라 지금은 취소할 수 없어요.");
         }
         return assembler.toView(a, true);

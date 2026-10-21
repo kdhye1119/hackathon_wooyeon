@@ -12,7 +12,7 @@ public enum ErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다."),
     INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
     PROFILE_INCOMPLETE(HttpStatus.BAD_REQUEST, "프로필 필수 항목을 먼저 입력해 주세요."),
-    CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집·이용 및 운영 정책 동의가 필요합니다."),
+    CONSENT_REQUIRED(HttpStatus.BAD_REQUEST, "개인정보 수집/이용 및 운영 정책 동의가 필요합니다."),
     ACCOUNT_RESTRICTED(HttpStatus.FORBIDDEN, "참가가 제한된 계정입니다."),
     SLOT_CLOSED(HttpStatus.BAD_REQUEST, "모집이 마감된 회차입니다."),
     DUPLICATE_APPLICATION(HttpStatus.CONFLICT, "이미 신청한 회차가 포함되어 있습니다."),

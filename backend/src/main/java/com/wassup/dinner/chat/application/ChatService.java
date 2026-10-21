@@ -92,9 +92,9 @@ public class ChatService {
             return existing.get();
         }
         ChatRoom room = roomRepository.save(new ChatRoom(table.getId(), slot.getId(),
-                slot.label() + " · 테이블 " + table.getTableCode(), clock.now()));
+                slot.label() + ", 테이블 " + table.getTableCode(), clock.now()));
         post(room.getId(), ChatMessage.Type.SYSTEM, "우연한 식탁 단체방이 열렸어요. 참가자 " + table.getMemberCount() + "명이 초대되었어요.");
-        post(room.getId(), ChatMessage.Type.NOTICE, briefing.announcement(slot, table, venue));
+        post(room.getId(), ChatMessage.Type.NOTICE, announcement(table, slot, venue));
 
         LocalDateTime now = clock.now();
         LocalDateTime reminderAt = slot.startAt().minusDays(1);
@@ -263,6 +263,12 @@ public class ChatService {
                         table.getReservationName(), venue.getPriceGuide()),
                 table.getCuration(), members, briefing.contentData(table, traitsOf(seated)), published,
                 briefing.cancelPolicy());
+    }
+
+    /** 테이블 확정 공지 문구 (운영자 템플릿 + 테이블 구성원 성향) */
+    public String announcement(DiningTable table, EventSlot slot, Venue venue) {
+        return briefing.announcement(slot, table, venue,
+                traitsOf(applicationRepository.findByTableId(table.getId()).stream().filter(Application::isSeated).toList()));
     }
 
     private List<String> traitsOf(List<Application> seated) {

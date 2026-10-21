@@ -59,6 +59,9 @@ public class ProfileService {
     }
 
     private static Set<String> names(Collection<? extends Enum<?>> values) {
+        if (values == null) {
+            return new LinkedHashSet<>();
+        }
         return values.stream().map(Enum::name).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

@@ -86,6 +86,7 @@ export type Venue = {
   seatsPerTable: number
   tablesPerSlot: number
   active: boolean
+  photoUrls?: string[]
 }
 
 export type Policy = {

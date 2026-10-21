@@ -4,7 +4,8 @@ import { AppBar, AppHeader, Badge, Body, Button, Chip, Dialog, Footer, Screen, S
 import { Icon } from '../../components/Icon'
 import { get, post } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
-import type { ApplicationView } from '../../lib/types'
+import { describe } from '../home/Home'
+import type { ApplicationView, OpenSlotsResponse } from '../../lib/types'
 import { demoApplications, demoSlots } from '../../lib/demo'
 import { deleteDiary, demoDiary, loadDiaries, saveDiary, shrinkImage, type Diary, type Mood } from '../../lib/diary'
 import starFilled from '../../assets/icons/star-filled.svg'
@@ -17,6 +18,7 @@ import miniTable from '../../assets/diary/mini-table.svg'
 import remember from '../../assets/diary/remember.svg'
 import rememberOff from '../../assets/diary/remember-off.svg'
 import calMark from '../../assets/diary/cal-mark.svg'
+import markUrl from '../../assets/brand/mark.svg'
 import reviewDot from '../../assets/diary/review-dot.svg'
 import laurel from '../../assets/brand/laurel.svg'
 import emptyMark from '../../assets/diary/empty-mark.svg'
@@ -27,20 +29,20 @@ const regionLabel = (code: string) => demoSlots.regions.find((r) => r.code === c
 const slotOf = (a: ApplicationView) => a.slots.find((s) => s.assigned) ?? a.slots[0]
 
 // 얼굴 SVG 의 비선택 투명도는 CSS 로 제어
-const strip = (svg: string) => svg.replace(/ opacity="[\d.]+"/, '').replace(/ style="display: block;"/, '').replace(/ width="48" height="48"/, ' width="100%" height="100%"')
+const strip = (svg: string) =>
+  svg
+    .replace(/ opacity="[\d.]+"/, '')
+    .replace(/ style="display: block;"/, '')
+    .replace(/ width="48" height="48"/, ' width="100%" height="100%"')
 const FACES: [Mood, string, string][] = [
   ['flutter', '설렘', strip(faceFlutter)],
   ['calm', '편안함', strip(faceCalm)],
   ['joy', '즐거움', strip(faceJoy)],
   ['sad', '아쉬움', strip(faceSad)],
 ]
-const PHOTO_GRADIENTS = [
-  'linear-gradient(137deg, #f2c46a 0%, rgba(181,83,47,.85) 39%, rgba(76,69,65,.9) 71%)',
-  'linear-gradient(136deg, #aeac78 0%, rgba(242,196,106,.9) 71%)',
-  'linear-gradient(136deg, #b5532f 0%, rgba(76,69,65,.9) 71%)',
-  'linear-gradient(136deg, #f2c46a 0%, rgba(174,172,120,.9) 71%)',
-]
-const photoBg = (src: string | undefined, i: number) => (src ? `center / cover no-repeat url(${src})` : PHOTO_GRADIENTS[i % PHOTO_GRADIENTS.length])
+/** 사진이 없으면 앱 로고 (그라데이션 대신) */
+const LOGO_BG = `center / 34% no-repeat url(${JSON.stringify(markUrl)}), color-mix(in srgb, var(--mustard) 28%, var(--card))`
+const photoBg = (src: string | undefined, _i = 0) => (src ? `center / cover no-repeat url(${src})` : LOGO_BG)
 
 type Mate = { userId: number; displayName: string; mbti: string | null }
 const demoMates: Mate[] = [
@@ -84,14 +86,14 @@ export function ReviewScreen() {
   )
 }
 
-function Stars({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+function Stars({ value, onChange, label }: { value: number | null; onChange: (v: number) => void; label: string }) {
   return (
     <div className="star-row">
       <span className="t-body-m">{label}</span>
       <div className="row" style={{ gap: 4 }} role="radiogroup" aria-label={label}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} role="radio" aria-checked={value === n} aria-label={`${n}점`} onClick={() => onChange(n)}>
-            <img src={n <= value ? starFilled : starEmpty} width={24} height={24} alt="" />
+            <img src={value !== null && n <= value ? starFilled : starEmpty} width={24} height={24} alt="" />
           </button>
         ))}
       </div>
@@ -104,22 +106,27 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
   const navigate = useNavigate()
   const toast = useToast()
   const mates = useApi(() => get<Mate[]>(`/api/applications/${app.id}/tablemates`), demoMates, [app.id])
-  const [rating, setRating] = useState({ table: 5, talk: 4, venue: 4 })
-  const [rejoin, setRejoin] = useState<5 | 3 | 1>(5)
+  // 입력값은 모두 비어 있는 상태(null)에서 시작한다
+  const [rating, setRating] = useState<{ table: number | null; talk: number | null; venue: number | null }>({ table: null, talk: null, venue: null })
+  const [rejoin, setRejoin] = useState<5 | 3 | 1 | null>(null)
   const [pref, setPref] = useState<Record<number, 'again' | 'avoid' | undefined>>({})
-  // 시안 예시: 유진·태오 재매칭
-  useEffect(() => {
-    if (demo) setPref({ 11: 'again', 12: 'again' })
-  }, [demo])
-  const [publicReview, setPublicReview] = useState(false)
-  const [nps, setNps] = useState(9)
+  const [publicReview, setPublicReview] = useState<boolean | null>(null)
+  const [nps, setNps] = useState<number | null>(null)
   const [comment, setComment] = useState('')
   const [report, setReport] = useState(false)
   const [busy, setBusy] = useState(false)
   const table = app.table
   const start = slotOf(app)?.startAt ?? app.submittedAt
 
+  const missing = [
+    rating.table === null || rating.talk === null || rating.venue === null ? '만족도' : '',
+    rejoin === null ? '재참여 의향' : '',
+    publicReview === null ? '공개 범위' : '',
+    nps === null ? '추천 의향' : '',
+  ].filter(Boolean)
+
   const submit = async () => {
+    if (missing.length) return toast.show(`${missing.join(', ')}을(를) 선택해 주세요`)
     setBusy(true)
     try {
       if (!demo)
@@ -132,8 +139,12 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
           comment,
           // '후기로 공개'면 홈 화면 참가자 후기에 이름 없이 보인다
           publicReview,
-          wantAgainUserIds: Object.entries(pref).filter(([, v]) => v === 'again').map(([k]) => Number(k)),
-          avoidUserIds: Object.entries(pref).filter(([, v]) => v === 'avoid').map(([k]) => Number(k)),
+          wantAgainUserIds: Object.entries(pref)
+            .filter(([, v]) => v === 'again')
+            .map(([k]) => Number(k)),
+          avoidUserIds: Object.entries(pref)
+            .filter(([, v]) => v === 'avoid')
+            .map(([k]) => Number(k)),
         })
       toast.show('후기를 보냈어요. 다음 매칭에 반영할게요')
       window.setTimeout(() => navigate(`/review/${app.id}?tab=diary`, { replace: true }), 900)
@@ -195,10 +206,26 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
               <span className="t-body-s" style={{ flex: 1 }}>
                 {m.displayName}
               </span>
-              <Chip selected={pref[m.userId] === 'again'} onClick={() => setPref({ ...pref, [m.userId]: pref[m.userId] === 'again' ? undefined : 'again' })}>
+              <Chip
+                selected={pref[m.userId] === 'again'}
+                onClick={() =>
+                  setPref({
+                    ...pref,
+                    [m.userId]: pref[m.userId] === 'again' ? undefined : 'again',
+                  })
+                }
+              >
                 재매칭
               </Chip>
-              <Chip selected={pref[m.userId] === 'avoid'} onClick={() => setPref({ ...pref, [m.userId]: pref[m.userId] === 'avoid' ? undefined : 'avoid' })}>
+              <Chip
+                selected={pref[m.userId] === 'avoid'}
+                onClick={() =>
+                  setPref({
+                    ...pref,
+                    [m.userId]: pref[m.userId] === 'avoid' ? undefined : 'avoid',
+                  })
+                }
+              >
                 제외
               </Chip>
             </div>
@@ -214,10 +241,10 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
         <section className="review-section">
           <div className="divider-h" style={{ opacity: 1 }} />
           <div className="review-tabs inline" role="tablist">
-            <button role="tab" aria-selected={publicReview} onClick={() => setPublicReview(true)}>
+            <button role="tab" aria-selected={publicReview === true} onClick={() => setPublicReview(true)}>
               후기로 공개
             </button>
-            <button role="tab" aria-selected={!publicReview} onClick={() => setPublicReview(false)}>
+            <button role="tab" aria-selected={publicReview === false} onClick={() => setPublicReview(false)}>
               운영진만 보기
             </button>
           </div>
@@ -227,18 +254,20 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
             <h3 className="t-h3" style={{ flex: 1 }}>
               추천 의향
             </h3>
-            <b className="nps-value">{nps}</b>
+            <b className="nps-value">{nps ?? '-'}</b>
             <span className="t-label-m muted">&nbsp;/ 10</span>
           </div>
           <input
-            className="nps-slider"
+            className={nps === null ? 'nps-slider unset' : 'nps-slider'}
             type="range"
             min={0}
             max={10}
             step={1}
-            value={nps}
+            value={nps ?? 5}
             onChange={(e) => setNps(Number(e.target.value))}
-            style={{ ['--p' as string]: `${nps * 10}%` }}
+            // 아직 안 고른 상태에서 가운데(5)를 눌러도 선택되게
+            onPointerUp={(e) => setNps(Number(e.currentTarget.value))}
+            style={{ ['--p' as string]: `${(nps ?? 0) * 10}%` }}
             aria-label="추천 의향"
           />
           <div className="row t-label-s muted">
@@ -253,9 +282,9 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
       </Body>
       <Footer>
         <p className="t-caption muted" style={{ textAlign: 'center' }}>
-          별점과 사람별 선호는 공개되지 않고, 다음 매칭에만 활용돼요.
+          {missing.length && !app.feedbackSubmitted ? `${missing.join(', ')}을(를) 선택하면 제출할 수 있어요` : '별점과 사람별 선호는 공개되지 않고, 다음 매칭에만 활용돼요.'}
         </p>
-        <Button disabled={busy || app.feedbackSubmitted} onClick={submit}>
+        <Button disabled={busy || app.feedbackSubmitted || missing.length > 0} onClick={submit}>
           {app.feedbackSubmitted ? '이미 제출했어요' : '제출'}
         </Button>
       </Footer>
@@ -265,9 +294,23 @@ function ReviewForm({ app, demo }: { app: ApplicationView; demo: boolean }) {
   )
 }
 
-const REPORT_CATEGORIES = ['불쾌한 언행', '무단 불참·지각', '연락 강요', '기타']
+const REPORT_CATEGORIES = ['불쾌한 언행', '무단 불참/지각', '연락 강요', '기타']
 
-function ReportSheet({ open, onClose, mates, tableId, demo, onDone }: { open: boolean; onClose: () => void; mates: Mate[]; tableId?: number; demo: boolean; onDone: (msg: string) => void }) {
+function ReportSheet({
+  open,
+  onClose,
+  mates,
+  tableId,
+  demo,
+  onDone,
+}: {
+  open: boolean
+  onClose: () => void
+  mates: Mate[]
+  tableId?: number
+  demo: boolean
+  onDone: (msg: string) => void
+}) {
   const [target, setTarget] = useState<number | null>(null)
   const [category, setCategory] = useState(REPORT_CATEGORIES[0])
   const [detail, setDetail] = useState('')
@@ -275,7 +318,13 @@ function ReportSheet({ open, onClose, mates, tableId, demo, onDone }: { open: bo
     if (!target) return
     try {
       if (!demo) {
-        if (kind === 'report') await post('/api/reports', { reportedUserId: target, tableId, category, detail })
+        if (kind === 'report')
+          await post('/api/reports', {
+            reportedUserId: target,
+            tableId,
+            category,
+            detail,
+          })
         else await post(`/api/blocks/${target}`)
       }
       onClose()
@@ -348,7 +397,14 @@ function MiniTable({ me = '나', people, remembered, onToggle }: { me?: string; 
           <button
             key={n + i}
             className="mini-seat"
-            style={all.length === 5 ? { left: MINI_SEATS_5[i][0] - 8, top: MINI_SEATS_5[i][1] } : { left: cx + r * Math.cos(a) - 25, top: cy + r * Math.sin(a) - 23 }}
+            style={
+              all.length === 5
+                ? { left: MINI_SEATS_5[i][0] - 8, top: MINI_SEATS_5[i][1] }
+                : {
+                    left: cx + r * Math.cos(a) - 25,
+                    top: cy + r * Math.sin(a) - 23,
+                  }
+            }
             onClick={() => i > 0 && onToggle?.(n)}
             aria-pressed={i > 0 ? on : undefined}
             aria-label={i > 0 ? `${n} 다시 만나고 싶어요` : '나'}
@@ -390,7 +446,8 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
   const set = (p: Partial<Diary>) => setD((prev) => ({ ...prev, ...p }))
   const holdTimer = useRef<number | undefined>(undefined)
   const date = new Date(d.date)
-  const slots = Math.max(3, d.photos.length)
+  // 아래 줄에는 큰 폴라로이드(대표) 사진을 뺀 나머지만, 올린 만큼만
+  const others = d.photos.map((_, i) => i).filter((i) => i !== d.cover)
 
   const addPhotos = async (files: FileList | null) => {
     if (!files) return
@@ -400,6 +457,14 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
     } catch (e) {
       toast.show(e instanceof Error ? e.message : '사진을 불러오지 못했어요')
     }
+  }
+
+  /** 사진 삭제: 대표 사진이 지워지면 첫 사진이 대표 */
+  const removePhoto = (i: number) => {
+    const photos = d.photos.filter((_, k) => k !== i)
+    const cover = d.cover === i ? 0 : d.cover > i ? d.cover - 1 : d.cover
+    set({ photos, cover: Math.min(cover, Math.max(photos.length - 1, 0)) })
+    toast.show('사진을 삭제했어요')
   }
 
   return (
@@ -421,43 +486,61 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
 
         <div className="polaroid-stage">
           <div className="polaroid">
-            <div className="polaroid-photo" style={{ background: photoBg(d.photos[d.cover], 0) }}>
-              <span className="cover-tag">대표</span>
-            </div>
-            <input className="polaroid-caption" value={d.caption} onChange={(e) => set({ caption: e.target.value })} aria-label="사진 제목" maxLength={20} />
+            {d.photos.length ? (
+              <div className="polaroid-photo" style={{ background: photoBg(d.photos[d.cover], 0) }}>
+                <span className="cover-tag">대표</span>
+                <button className="mini-del cover-del" aria-label="대표 사진 삭제" onClick={() => removePhoto(d.cover)}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </div>
+            ) : (
+              // 사진이 없을 때는 큰 폴라로이드 하나만: 눌러서 사진 추가
+              <button className="polaroid-photo empty" style={{ background: photoBg(undefined) }} onClick={() => fileRef.current?.click()} aria-label="사진 추가">
+                <span className="polaroid-add">
+                  <Icon name="plus" size={14} />
+                  사진 추가
+                </span>
+              </button>
+            )}
           </div>
           <span className="tape" />
         </div>
 
-        <div className="photo-strip">
-          {Array.from({ length: Math.min(slots, 5) }).map((_, i) => (
-            <button
-              key={i}
-              className="mini-polaroid"
-              style={{ transform: `rotate(${[-3, 4, -2, 3, -1][i]}deg)` }}
-              onPointerDown={() => {
-                holdTimer.current = window.setTimeout(() => {
-                  if (d.photos[i]) {
-                    set({ cover: i })
-                    toast.show('대표 사진으로 지정했어요')
-                  }
-                }, 500)
-              }}
-              onPointerUp={() => window.clearTimeout(holdTimer.current)}
-              onPointerLeave={() => window.clearTimeout(holdTimer.current)}
-              aria-label={`사진 ${i + 1}`}
-            >
-              <span style={{ background: photoBg(d.photos[i], i + 1) }} />
-            </button>
-          ))}
-          {d.photos.length < 6 && (
-            <button className="add-photo" onClick={() => fileRef.current?.click()} aria-label="사진 추가">
-              <Icon name="plus" />
-            </button>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addPhotos(e.target.files)} />
-        </div>
-        <p className="diary-hint">사진을 길게 누르면 대표로 지정</p>
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addPhotos(e.target.files)} />
+        {d.photos.length > 0 && (
+          <>
+            <div className="photo-strip">
+              {others.map((i, k) => (
+                <div key={d.photos[i].slice(-24) + i} className="mini-wrap">
+                  <button
+                    className="mini-polaroid"
+                    style={{ transform: `rotate(${[-3, 4, -2, 3, -1][k % 5]}deg)` }}
+                    onPointerDown={() => {
+                      holdTimer.current = window.setTimeout(() => {
+                        set({ cover: i })
+                        toast.show('대표 사진으로 지정했어요')
+                      }, 500)
+                    }}
+                    onPointerUp={() => window.clearTimeout(holdTimer.current)}
+                    onPointerLeave={() => window.clearTimeout(holdTimer.current)}
+                    aria-label={`사진 ${k + 2}`}
+                  >
+                    <span style={{ background: photoBg(d.photos[i]) }} />
+                  </button>
+                  <button className="mini-del" aria-label={`사진 ${k + 2} 삭제`} onClick={() => removePhoto(i)}>
+                    <Icon name="trash" size={12} />
+                  </button>
+                </div>
+              ))}
+              {d.photos.length < 6 && (
+                <button className="add-photo" onClick={() => fileRef.current?.click()} aria-label="사진 추가">
+                  <Icon name="plus" />
+                </button>
+              )}
+            </div>
+            {others.length > 0 && <p className="diary-hint">사진을 길게 누르면 대표로 지정</p>}
+          </>
+        )}
 
         <div className="stack" style={{ alignItems: 'center', gap: 10 }}>
           <p className="diary-hint" style={{ fontSize: 13, letterSpacing: 0.52 }}>
@@ -467,7 +550,16 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
             {FACES.map(([code, label, svg]) => {
               const on = d.moods.includes(code)
               return (
-                <button key={code} className={on ? 'mood on' : 'mood'} aria-pressed={on} onClick={() => set({ moods: on ? d.moods.filter((m) => m !== code) : [...d.moods, code] })}>
+                <button
+                  key={code}
+                  className={on ? 'mood on' : 'mood'}
+                  aria-pressed={on}
+                  onClick={() =>
+                    set({
+                      moods: on ? d.moods.filter((m) => m !== code) : [...d.moods, code],
+                    })
+                  }
+                >
                   <span className="mood-face" dangerouslySetInnerHTML={{ __html: svg }} />
                   <span className="mood-label">{label}</span>
                 </button>
@@ -487,7 +579,11 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
           <MiniTable
             people={d.people}
             remembered={d.remember}
-            onToggle={(n) => set({ remember: d.remember.includes(n) ? d.remember.filter((x) => x !== n) : [...d.remember, n] })}
+            onToggle={(n) =>
+              set({
+                remember: d.remember.includes(n) ? d.remember.filter((x) => x !== n) : [...d.remember, n],
+              })
+            }
           />
         </div>
         <img src={laurel} width={89.6} height={30.8} alt="" />
@@ -496,8 +592,13 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
           나만 볼 수 있는 기록
         </p>
       </Body>
-      <Footer>
+      <Footer style={{ flexDirection: 'row', gap: 10 }}>
+        {/* 기록 안 함: 저장하지 않고 캘린더로 */}
+        <Button variant="secondary" style={{ flex: 1 }} onClick={() => navigate('/calendar')}>
+          기록 안 함
+        </Button>
         <Button
+          style={{ flex: 2 }}
           onClick={() => {
             if (!saveDiary(d)) return toast.show('저장 공간이 부족해요. 사진 수를 줄여주세요')
             toast.show('일기를 간직했어요')
@@ -512,12 +613,62 @@ function DiaryEditor({ app }: { app: ApplicationView }) {
   )
 }
 
-type Cell = { day: number; iso: string; kind: 'applied' | 'matched' | 'logo' | 'photo' | 'today' | 'plain'; app?: ApplicationView; diary?: Diary; needsReview?: boolean }
+type Cell = {
+  day: number
+  iso: string
+  kind: 'applied' | 'matched' | 'logo' | 'photo' | 'open' | 'today' | 'plain'
+  slotTime?: string
+  app?: ApplicationView
+  diary?: Diary
+  needsReview?: boolean
+}
 
 /** 5-3 캘린더 (+ 5-4 일기 보기, 5-5 기록 없음, 5-6 삭제 확인) */
+/** 캘린더에서 고른 날짜의 카드: 누르면 상세(일기·기록 / 매칭 정보) */
+function DayCard({ c, onOpen }: { c: Cell; onOpen: () => void }) {
+  const app = c.app
+  const venue = c.diary?.venue ?? app?.table?.venueName ?? (app ? regionLabel(slotOf(app)?.region ?? '') : '')
+  if (c.kind === 'open')
+    return (
+      <button className="recent-diary" onClick={onOpen}>
+        <span className="recent-thumb" style={{ background: photoBg(undefined) }} />
+        <span className="stack" style={{ flex: 1, minWidth: 0, gap: 4 }}>
+          <span className="t-label-m">
+            {fmt.md(c.iso)} ({DAY[new Date(c.iso).getDay()]}){c.slotTime ? ` ${c.slotTime}` : ''}
+          </span>
+          <span className="recent-text">모집 중이에요. 눌러서 신청하기</span>
+        </span>
+        <Icon name="chevron-right" />
+      </button>
+    )
+  const sub = c.diary
+    ? c.diary.text || '사진만 남긴 날이에요'
+    : c.kind === 'logo'
+      ? c.needsReview
+        ? '후기를 아직 남기지 않았어요'
+        : '아직 일기를 쓰지 않았어요'
+      : app
+        ? describe(app).sub
+        : ''
+  return (
+    <button className="recent-diary" onClick={onOpen}>
+      <span className="recent-thumb" style={{ background: photoBg(c.diary?.photos[c.diary.cover]) }} />
+      <span className="stack" style={{ flex: 1, minWidth: 0, gap: 4 }}>
+        <span className="t-label-m">
+          {fmt.md(c.iso)} ({DAY[new Date(c.iso).getDay()]}){venue ? `, ${venue}` : ''}
+        </span>
+        <span className="recent-text">{sub}</span>
+      </span>
+      <Icon name="chevron-right" />
+    </button>
+  )
+}
+
 export function CalendarScreen() {
   const navigate = useNavigate()
   const apps = useApi(() => get<ApplicationView[]>('/api/applications'), demoApplications)
+  // 모집 중인 회차 (신청하지 않은 날짜에 색 없이 표시)
+  const openSlots = useApi(() => get<OpenSlotsResponse>('/api/slots'), demoSlots)
   const [month, setMonth] = useState(() => {
     const n = new Date()
     return new Date(n.getFullYear(), n.getMonth(), 1)
@@ -525,6 +676,8 @@ export function CalendarScreen() {
   const [diaries, setDiaries] = useState(loadDiaries)
   const [openDay, setOpenDay] = useState<Cell | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // 날짜를 한 번 누르면 아래에 그날 카드, 카드를 누르면 상세
+  const [selectedIso, setSelectedIso] = useState<string | null>(null)
 
   // 데모: Figma 의 10.15 일기를 보여준다
   const allDiaries = useMemo(() => (apps.demo && !Object.keys(diaries).length ? { [demoDiary.appId]: demoDiary } : diaries), [apps.demo, diaries])
@@ -537,7 +690,9 @@ export function CalendarScreen() {
     const out: (Cell | null)[] = Array.from({ length: first }, () => null)
     for (let day = 1; day <= days; day++) {
       const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      const app = apps.data.find((a) => a.appStatus !== 'CANCELED' && slotOf(a)?.startAt.startsWith(iso))
+      // 매칭 실패(선택 대기, 종료, 일정 이동)와 환불된 신청은 캘린더에 표시하지 않는다
+      const failed = (x: ApplicationView) => ['ALTERNATIVE_OFFERED', 'NO_MATCH', 'TRANSFERRED'].includes(x.matchStatus) || x.paymentStatus === 'REFUNDED'
+      const app = apps.data.find((a) => a.appStatus !== 'CANCELED' && !failed(a) && slotOf(a)?.startAt.startsWith(iso))
       const diary = Object.values(allDiaries).find((dd) => dd.date.startsWith(iso))
       const past = new Date(`${iso}T23:59:59`).getTime() < Date.now()
       let kind: Cell['kind'] = 'plain'
@@ -545,16 +700,30 @@ export function CalendarScreen() {
       else if (app && past) kind = 'logo'
       else if (app?.matchStatus === 'CONFIRMED') kind = 'matched'
       else if (app) kind = 'applied'
+      else if (openSlots.data.dates.some((x) => x.date === iso)) kind = 'open'
       else if (new Date().toDateString() === new Date(iso).toDateString()) kind = 'today'
-      out.push({ day, iso, kind, app, diary, needsReview: !!app && past && !app.feedbackSubmitted && app.nextActions.includes('FEEDBACK') })
+      out.push({
+        day,
+        iso,
+        kind,
+        app,
+        diary,
+        slotTime: openSlots.data.slots.find((x) => x.date === iso)?.startTime?.slice(0, 5),
+        needsReview: !!app && past && !app.feedbackSubmitted && app.nextActions.includes('FEEDBACK'),
+      })
     }
     return out
-  }, [month, apps.data, allDiaries])
+  }, [month, apps.data, allDiaries, openSlots.data])
 
-  const recent = Object.values(allDiaries).sort((a, b) => b.date.localeCompare(a.date))[0]
-  const openCell = (c: Cell) => {
+  const selected = cells.find((c) => c?.iso === selectedIso) ?? null
+  const openDetail = (c: Cell) => {
     if (c.kind === 'photo' || c.kind === 'logo') setOpenDay(c)
+    else if (c.kind === 'open') navigate(`/apply?date=${c.iso}`)
     else if (c.app) navigate(c.kind === 'matched' ? `/match/${c.app.id}` : `/applications/${c.app.id}`)
+  }
+  const moveMonth = (n: number) => {
+    setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1))
+    setSelectedIso(null)
   }
 
   return (
@@ -565,10 +734,10 @@ export function CalendarScreen() {
           <h2 className="cal-title">
             {month.getFullYear()}. {String(month.getMonth() + 1).padStart(2, '0')}
           </h2>
-          <button className="icon-btn" aria-label="이전 달" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+          <button className="icon-btn" aria-label="이전 달" onClick={() => moveMonth(-1)}>
             <Icon name="chevron-left" />
           </button>
-          <button className="icon-btn" aria-label="다음 달" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+          <button className="icon-btn" aria-label="다음 달" onClick={() => moveMonth(1)}>
             <Icon name="chevron-right" />
           </button>
         </div>
@@ -582,14 +751,28 @@ export function CalendarScreen() {
             !c ? (
               <span key={`e${i}`} />
             ) : (
-              <button key={c.iso} className="cal-cell" onClick={() => openCell(c)} disabled={c.kind === 'plain'} aria-label={`${c.day}일`}>
+              <button
+                key={c.iso}
+                className={c.iso === selectedIso ? 'cal-cell selected' : 'cal-cell'}
+                onClick={() => setSelectedIso(c.iso === selectedIso ? null : c.iso)}
+                disabled={c.kind === 'plain' || c.kind === 'today'}
+                aria-pressed={c.iso === selectedIso}
+                aria-label={`${c.day}일`}
+              >
                 {c.kind === 'plain' && <span className="cal-day">{c.day}</span>}
                 {c.kind === 'today' && <span className="cal-day today">{c.day}</span>}
                 {c.kind === 'applied' && (
                   <span className="cal-tile applied">
                     <b>{c.day}</b>
                     <small>{fmt.time(slotOf(c.app!)!.startAt)}</small>
-                    <em>{c.app!.matchStatus === 'NO_MATCH' ? '매칭 실패' : '매칭 대기'}</em>
+                    <em>매칭 대기</em>
+                  </span>
+                )}
+                {c.kind === 'open' && (
+                  <span className="cal-tile open">
+                    <b>{c.day}</b>
+                    {c.slotTime && <small>{c.slotTime}</small>}
+                    <em>모집 중</em>
                   </span>
                 )}
                 {c.kind === 'matched' && (
@@ -607,7 +790,12 @@ export function CalendarScreen() {
                   </span>
                 )}
                 {c.kind === 'photo' && (
-                  <span className="cal-tile photo" style={{ background: photoBg(c.diary!.photos[c.diary!.cover], 0) }}>
+                  <span
+                    className={c.diary!.photos[c.diary!.cover] ? 'cal-tile photo' : 'cal-tile photo nophoto'}
+                    style={{
+                      background: photoBg(c.diary!.photos[c.diary!.cover], 0),
+                    }}
+                  >
                     <b>{c.day}</b>
                   </span>
                 )}
@@ -629,24 +817,18 @@ export function CalendarScreen() {
             후기 미작성
           </span>
         </div>
-        {recent && (
-          <button className="recent-diary" onClick={() => setOpenDay({ day: new Date(recent.date).getDate(), iso: recent.date.slice(0, 10), kind: 'photo', diary: recent })}>
-            <span className="recent-thumb" style={{ background: photoBg(recent.photos[recent.cover], 0) }} />
-            <span className="stack" style={{ flex: 1, minWidth: 0, gap: 4 }}>
-              <span className="t-label-m">
-                {fmt.md(recent.date)} ({DAY[new Date(recent.date).getDay()]}), {recent.venue}
-              </span>
-              <span className="recent-text">{recent.text}</span>
-            </span>
-            <Icon name="chevron-right" />
-          </button>
-        )}
+        {selected && <DayCard c={selected} onOpen={() => openDetail(selected)} />}
       </Body>
       <TabBar />
 
       <Sheet open={!!openDay} onClose={() => setOpenDay(null)} className="sheet-center day-sheet">
         {openDay?.diary ? (
-          <DiaryView diary={openDay.diary} onDelete={() => setConfirmDelete(true)} onEdit={() => navigate(`/review/${openDay.diary!.appId}?tab=diary`)} onClose={() => setOpenDay(null)} />
+          <DiaryView
+            diary={openDay.diary}
+            onDelete={() => setConfirmDelete(true)}
+            onEdit={() => navigate(`/review/${openDay.diary!.appId}?tab=diary`)}
+            onClose={() => setOpenDay(null)}
+          />
         ) : openDay?.app ? (
           <EmptyDay app={openDay.app} />
         ) : null}
@@ -684,7 +866,7 @@ export function CalendarScreen() {
 function DiaryView({ diary, onDelete, onEdit, onClose }: { diary: Diary; onDelete: () => void; onEdit: () => void; onClose: () => void }) {
   const [page, setPage] = useState(diary.cover)
   const date = new Date(diary.date)
-  const photos = diary.photos.length ? diary.photos : ['', '', '', '']
+  const photos = diary.photos.length ? diary.photos : ['']
   useEffect(() => setPage(diary.cover), [diary])
   const next = (page + 1) % photos.length
   return (
@@ -704,7 +886,6 @@ function DiaryView({ diary, onDelete, onEdit, onClose }: { diary: Diary; onDelet
         {photos.length > 1 && <span className="day-photo-back" style={{ background: photoBg(photos[next], 1) }} />}
         <div className="day-polaroid">
           <span className="day-polaroid-photo" style={{ background: photoBg(photos[page], 0) }} />
-          <p>{diary.caption}</p>
         </div>
       </div>
       <div className="page-dots">
@@ -725,12 +906,14 @@ function DiaryView({ diary, onDelete, onEdit, onClose }: { diary: Diary; onDelet
       {diary.text && <p className="day-text">{diary.text}</p>}
       <div className="day-people">
         {/* 다시 만나고 싶은 사람(♥)을 앞에 */}
-        {[...diary.people].sort((a, b) => Number(diary.remember.includes(b)) - Number(diary.remember.includes(a))).map((p) => (
-          <span key={p} className={diary.remember.includes(p) ? 'on' : undefined}>
-            {diary.remember.includes(p) && <img src={remember} width={14} height={13} alt="" />}
-            {p}
-          </span>
-        ))}
+        {[...diary.people]
+          .sort((a, b) => Number(diary.remember.includes(b)) - Number(diary.remember.includes(a)))
+          .map((p) => (
+            <span key={p} className={diary.remember.includes(p) ? 'on' : undefined}>
+              {diary.remember.includes(p) && <img src={remember} width={14} height={13} alt="" />}
+              {p}
+            </span>
+          ))}
       </div>
       <div className="row" style={{ gap: 10, width: '100%' }}>
         <Button variant="secondary" onClick={onEdit}>

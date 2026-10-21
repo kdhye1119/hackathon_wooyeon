@@ -4,35 +4,20 @@ import { session } from './lib/api'
 import IntroLogin from './screens/auth/IntroLogin'
 import { PasswordLogin, PasswordReset, PasswordSetup, PhoneVerify } from './screens/auth/AuthScreens'
 import Onboarding from './screens/onboarding/Onboarding'
-import Home from './screens/home/Home'
+import Home, { GuestHome, ReviewsPage } from './screens/home/Home'
+import OAuthCallback from './screens/auth/OAuthCallback'
 import Notifications from './screens/home/Notifications'
 import { ApplyDone, ApplyPayment, ApplyPreference, ApplySchedule } from './screens/apply/Apply'
 import { MatchConfirmed, MatchFailed, MatchMoved, MatchRefunded } from './screens/match/Match'
 import { ChatRoom, RoomList } from './screens/rooms/Rooms'
 import { CalendarScreen, ReviewScreen } from './screens/records/Records'
-import { MyPage, TicketPage } from './screens/my/My'
+import { HistoryPage, MyPage, TicketPage } from './screens/my/My'
 import AdminApp from './admin/AdminApp'
 import DemoPanel from './components/DemoPanel'
 
-const GUEST = 'wt.guest'
-
-/** 로그인(또는 비회원 둘러보기) 전이면 인트로로 */
+/** 로그인 전이면 인트로로 (비회원 둘러보기는 /guest 후기 화면만) */
 function RequireSession({ children }: { children: ReactNode }) {
-  const { search } = useLocation()
-  if (new URLSearchParams(search).has('guest')) {
-    try {
-      sessionStorage.setItem(GUEST, '1')
-    } catch {
-      /* noop */
-    }
-  }
-  let guest = false
-  try {
-    guest = sessionStorage.getItem(GUEST) === '1'
-  } catch {
-    /* noop */
-  }
-  if (!session.token && !guest) return <Navigate to="/start" replace />
+  if (!session.token) return <Navigate to="/start" replace />
   return <>{children}</>
 }
 
@@ -44,6 +29,10 @@ function ParticipantApp() {
       <div className="app-frame">
         <Routes>
           <Route path="/start" element={<IntroLogin />} />
+          <Route path="/guest" element={<GuestHome />} />
+          <Route path="/oauth/:provider" element={<OAuthCallback />} />
+          <Route path="/guest/reviews" element={<ReviewsPage guest />} />
+          <Route path="/reviews" element={<RequireSession><ReviewsPage /></RequireSession>} />
           <Route path="/login/password" element={<PasswordLogin />} />
           <Route path="/login/reset" element={<PasswordReset />} />
           <Route path="/signup/verify" element={<PhoneVerify />} />
@@ -67,6 +56,7 @@ function ParticipantApp() {
           <Route path="/review/:id" element={<RequireSession><ReviewScreen /></RequireSession>} />
           <Route path="/calendar" element={<RequireSession><CalendarScreen /></RequireSession>} />
           <Route path="/my" element={<RequireSession><MyPage /></RequireSession>} />
+          <Route path="/my/history" element={<RequireSession><HistoryPage /></RequireSession>} />
           <Route path="/my/tickets" element={<RequireSession><TicketPage /></RequireSession>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -55,6 +55,9 @@ const NAV: [string, IconName, string][] = [
 function Sidebar() {
   const navigate = useNavigate()
   const ex = useAdminApi(() => get<unknown[]>('/api/admin/exceptions').then((l) => l.length), 10)
+  // 권한별 접근 통제: 로그인한 운영자 권한 표시
+  const me = useAdminApi(() => get<{ role: string }>('/api/admin/me'), { role: 'OWNER' })
+  const ROLE: Record<string, string> = { OWNER: '권한: 총괄 (전체)', OPERATOR: '권한: 운영 매니저 (정책 변경 제외)', VIEWER: '권한: 조회 전용' }
   return (
     <aside className="adm-sidebar">
       <div className="adm-logo">
@@ -76,7 +79,7 @@ function Sidebar() {
         <span className="adm-me-avatar">{adminSession.token === 'demo' ? '운' : (adminSession.name ?? '운').slice(0, 1)}</span>
         <span className="stack">
           <b>{adminSession.token === 'demo' ? '운영자 김와썹' : adminSession.name ?? '운영자'}</b>
-          {adminSession.token === 'demo' && <small>권한: 매칭/결제/안전</small>}
+          <small>{adminSession.token === 'demo' ? '권한: 매칭/결제/안전' : ROLE[me.data.role] ?? me.data.role}</small>
         </span>
         <button
           className="adm-logout"

@@ -76,6 +76,10 @@ public class RetentionService {
             if (a.isActive()) {
                 active.addAll(a.getSlotIds());
             }
+            // 취소한 신청은 선호 근거로 치지 않는다
+            if (a.getAppStatus() == com.wassup.dinner.application.domain.ApplicationStatus.CANCELED) {
+                continue;
+            }
             boolean attended = a.getAttendanceStatus() == AttendanceStatus.ATTENDED;
             List<Long> ids = a.getAssignedSlotId() != null ? List.of(a.getAssignedSlotId()) : a.getSlotIds();
             for (EventSlot s : slotRepository.findAllById(ids)) {
@@ -83,9 +87,15 @@ public class RetentionService {
                 dayFreq.merge(s.getDate().getDayOfWeek(), attended ? 2L : 1L, Long::sum);
             }
         }
+        // 참여 내역이 없으면 추천하지 않는다 (근거 없는 '추천' 표시 방지)
+        if (regionFreq.isEmpty()) {
+            return List.of();
+        }
         LocalDateTime now = clock.now();
         return slotRepository.findByStatusOrderByDateAscStartTimeAsc(SlotStatus.RECRUITING).stream()
                 .filter(s -> s.isOpen(now) && !active.contains(s.getId()))
+                // 이전에 참여한 지역이나 요일과 겹치는 회차만
+                .filter(s -> regionFreq.containsKey(s.getRegion()) || dayFreq.containsKey(s.getDate().getDayOfWeek()))
                 .sorted(Comparator.comparingLong((EventSlot s) -> -(2 * regionFreq.getOrDefault(s.getRegion(), 0L)
                                 + dayFreq.getOrDefault(s.getDate().getDayOfWeek(), 0L)))
                         .thenComparing(EventSlot::startAt))
@@ -103,7 +113,7 @@ public class RetentionService {
         if (dayFreq.getOrDefault(s.getDate().getDayOfWeek(), 0L) > 0) {
             parts.add(s.getDate().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.KOREAN) + " 저녁");
         }
-        String base = parts.isEmpty() ? "가장 가까운 모집 일정이에요." : String.join(" · ", parts) + " 일정이에요.";
+        String base = parts.isEmpty() ? "가장 가까운 모집 일정이에요." : String.join(", ", parts) + " 일정이에요.";
         return base + " 지난 테이블에서 만난 분들과 겹치지 않게 새로운 분들로 구성해 드려요.";
     }
 
@@ -120,16 +130,21 @@ public class RetentionService {
                         attendedRegions.computeIfAbsent(a.getUserId(), k -> new HashSet<>()).add(s.getRegion()));
             }
         }
+        // 한 번에 여러 회차가 열려도 사람당 알림은 1건: 가장 가까운 회차 + 나머지 개수
+        List<EventSlot> ordered = slots.stream().sorted(Comparator.comparing(EventSlot::startAt)).toList();
         int sent = 0;
-        for (EventSlot slot : slots) {
-            for (Map.Entry<Long, Set<Region>> e : attendedRegions.entrySet()) {
-                if (e.getValue().contains(slot.getRegion())) {
-                    notificationService.notify(e.getKey(), NotificationType.NEXT_RECOMMENDATION,
-                            NotificationService.vars("slot", slot.label(), "reason", "지난번 즐거웠던 " + slot.getRegion().getLabel() + "에서 새로운 분들을 만나보세요."),
-                            "slot:" + slot.getId() + ":user:" + e.getKey(), null, null);
-                    sent++;
-                }
+        for (Map.Entry<Long, Set<Region>> e : attendedRegions.entrySet()) {
+            List<EventSlot> mine = ordered.stream().filter(s -> e.getValue().contains(s.getRegion())).toList();
+            if (mine.isEmpty()) {
+                continue;
             }
+            EventSlot first = mine.get(0);
+            String more = mine.size() > 1 ? " 외 " + (mine.size() - 1) + "개 일정" : "";
+            notificationService.notify(e.getKey(), NotificationType.NEXT_RECOMMENDATION,
+                    NotificationService.vars("slot", first.label() + more,
+                            "reason", "지난번 즐거웠던 " + first.getRegion().getLabel() + "에서 새로운 분들을 만나보세요."),
+                    "slots:" + first.getId() + ":" + mine.size() + ":user:" + e.getKey(), null, null);
+            sent++;
         }
         return sent;
     }

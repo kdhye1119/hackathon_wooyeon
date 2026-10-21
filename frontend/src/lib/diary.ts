@@ -1,3 +1,4 @@
+import { userKey } from './api'
 // 5-2 일기: "나만 볼 수 있는 기록". 서버에 올리지 않고 이 기기에만 저장한다.
 export type Mood = 'flutter' | 'calm' | 'joy' | 'sad'
 export type Diary = {
@@ -14,11 +15,11 @@ export type Diary = {
   people: string[]
 }
 
-const KEY = 'wt.diaries'
+const KEY = () => userKey('wt.diaries')
 
 export function loadDiaries(): Record<number, Diary> {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}')
+    return JSON.parse(localStorage.getItem(KEY()) ?? '{}')
   } catch {
     return {}
   }
@@ -28,7 +29,7 @@ export function saveDiary(d: Diary) {
   const all = loadDiaries()
   all[d.appId] = d
   try {
-    localStorage.setItem(KEY, JSON.stringify(all))
+    localStorage.setItem(KEY(), JSON.stringify(all))
     return true
   } catch {
     return false // 저장 공간 부족 (사진이 너무 많을 때)
@@ -39,7 +40,7 @@ export function deleteDiary(appId: number) {
   const all = loadDiaries()
   delete all[appId]
   try {
-    localStorage.setItem(KEY, JSON.stringify(all))
+    localStorage.setItem(KEY(), JSON.stringify(all))
   } catch {
     /* noop */
   }

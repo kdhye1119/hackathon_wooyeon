@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class OtpService {
 
-    public enum Purpose { SIGNUP, RESET }
+    public enum Purpose { SIGNUP, RESET, CHANGE_PHONE }
 
     public static final Duration TTL = Duration.ofMinutes(3);
     private static final int MAX_ATTEMPTS = 5;

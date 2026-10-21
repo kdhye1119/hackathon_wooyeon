@@ -59,7 +59,21 @@ public class AuthService {
         if (purpose == OtpService.Purpose.RESET && user == null) {
             throw new ApiException(ErrorCode.NOT_FOUND, "가입되지 않은 번호예요.");
         }
+        if (purpose == OtpService.Purpose.CHANGE_PHONE && user != null) {
+            throw new ApiException(ErrorCode.INVALID_STATE, "이미 다른 계정에서 쓰는 번호예요.");
+        }
         return otpService.issue(phone, purpose);
+    }
+
+    /** 연락처 변경: 새 번호로 받은 인증번호를 확인한 뒤 바꾼다 */
+    @Transactional
+    public void changePhone(Long userId, String phone, String code) {
+        if (userRepository.findByPhone(phone).isPresent()) {
+            throw new ApiException(ErrorCode.INVALID_STATE, "이미 다른 계정에서 쓰는 번호예요.");
+        }
+        otpService.consume(phone, OtpService.Purpose.CHANGE_PHONE, code);
+        User u = userRepository.findById(userId).orElseThrow(() -> ApiException.notFound("사용자"));
+        u.setPhone(phone);
     }
 
     /** 회원가입: 인증번호 확인 + 비밀번호 설정. 비밀번호 없이 쓰던 테스트 계정이면 비밀번호만 설정 */
@@ -90,6 +104,10 @@ public class AuthService {
         if (password == null || password.length() < 8 || !password.matches(".*[A-Za-z].*") || !password.matches(".*[0-9].*")) {
             throw new ApiException(ErrorCode.INVALID_REQUEST, "비밀번호는 8자 이상, 영문과 숫자를 모두 포함해야 해요.");
         }
+    }
+
+    public LoginResponse loginResponse(User user) {
+        return toLogin(user);
     }
 
     private LoginResponse toLogin(User user) {

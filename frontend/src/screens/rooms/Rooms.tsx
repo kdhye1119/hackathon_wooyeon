@@ -149,6 +149,24 @@ const CARD_ICON: [RegExp, IconName][] = [
   [/^아이스브레이킹/, 'star'],
 ]
 
+/** 본문 속 URL 을 눌러서 열 수 있는 링크로 */
+function Linkify({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/\S+)/g)
+  return (
+    <>
+      {parts.map((p, i) =>
+        /^https?:\/\//.test(p) ? (
+          <a key={i} className="chat-link" href={p} target="_blank" rel="noreferrer">
+            {/map\.(kakao|naver)\.com|maps\.google/.test(p) ? '지도에서 보기' : p}
+          </a>
+        ) : (
+          p
+        ),
+      )}
+    </>
+  )
+}
+
 /** 시스템 메시지를 카드로: 첫 줄 = 제목, 나머지 = 본문 */
 function SystemCard({ m }: { m: Msg }) {
   const [title, ...lines] = m.content.split('\n')
@@ -182,7 +200,7 @@ function SystemCard({ m }: { m: Msg }) {
             })
         : lines.map((l, i) => (
             <p key={i} className="t-body-s">
-              {l}
+              <Linkify text={l} />
             </p>
           ))}
     </div>
@@ -312,14 +330,18 @@ export function ChatRoom() {
                 <SystemCard m={m} />
               ) : mine ? (
                 <div className="bubble-row mine">
-                  <p className="bubble">{m.content}</p>
+                  <p className="bubble">
+                    <Linkify text={m.content} />
+                  </p>
                 </div>
               ) : (
                 <div className="bubble-row">
                   <span className="chat-avatar">{(m.senderName ?? '?').slice(0, 1)}</span>
                   <div className="stack" style={{ gap: 4, minWidth: 0 }}>
                     <span className="t-caption c-sage">{m.senderName}</span>
-                    <p className="bubble">{m.content}</p>
+                    <p className="bubble">
+                    <Linkify text={m.content} />
+                  </p>
                   </div>
                 </div>
               )}
