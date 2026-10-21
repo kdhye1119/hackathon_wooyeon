@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="bell">
+<g id="icon/bell">
+<path id="Vector" d="M14 16C14 14.4087 14.6321 12.8826 15.7574 11.7574C16.8826 10.6321 18.4087 10 20 10C21.5913 10 23.1174 10.6321 24.2426 11.7574C25.3679 12.8826 26 14.4087 26 16C26 23 29 25 29 25H11C11 25 14 23 14 16Z" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#4C4541"/>
+<path id="Vector_2" d="M18.3 29C18.4577 29.3159 18.7003 29.5816 19.0006 29.7674C19.3008 29.9531 19.6469 30.0515 20 30.0515C20.3531 30.0515 20.6992 29.9531 20.9994 29.7674C21.2997 29.5816 21.5423 29.3159 21.7 29" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#4C4541"/>
+</g>
+<path id="badge" d="M31.25 12C31.25 13.7949 29.7949 15.25 28 15.25C26.2051 15.25 24.75 13.7949 24.75 12C24.75 10.2051 26.2051 8.75 28 8.75C29.7949 8.75 31.25 10.2051 31.25 12Z" fill="#B5532F" stroke-width="1.5" stroke="#FCF0DA"/>
+</g>
+</svg>

@@ -1,0 +1,25 @@
+.ob-top { display: flex; align-items: center; gap: 12px; padding: 8px 24px 8px 16px; flex-shrink: 0; }
+.ob-progress { flex: 1; display: flex; gap: 4px; }
+.ob-progress span { flex: 1; height: 4px; border-radius: 2px; background: var(--sage); }
+.ob-progress span.on { background: var(--mustard); }
+.ob-body { gap: 20px; padding: 20px 24px 0; }
+.ob-row { display: flex; gap: 12px; }
+.ob-row > * { flex: 1; min-width: 0; }
+.ob-footer { padding: 12px 24px 40px; flex-shrink: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mbti-grid { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.mbti-row { display: flex; gap: 10px; width: 100%; }
+.mbti-cell {
+  flex: 1;
+  height: 60px;
+  border-radius: 14px;
+  border: 1px solid var(--sage);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mbti-cell[aria-pressed='true'] { background: var(--mustard); border-color: var(--ink); }
+.mbti-cell b { font-family: var(--font-serif); font-weight: 700; font-size: 18px; line-height: 1.45; }
+.mbti-cell span { font-size: 13px; line-height: 1.55; opacity: 0.75; }

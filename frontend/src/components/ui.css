@@ -1,0 +1,373 @@
+/* ── App shell: 390 모바일 웹. 넓은 화면에서도 테두리·그림자 없이 화면 높이를 채운다 ── */
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--paper);
+}
+.app-frame {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-width);
+  height: 100dvh;
+  background: var(--paper);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 화면 레이아웃 */
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  position: relative;
+}
+.screen-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.screen-body::-webkit-scrollbar { display: none; }
+.screen-footer {
+  flex-shrink: 0;
+  padding: 12px 20px 32px;
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; align-items: center; }
+.spacer { flex: 1; }
+
+/* ── Button (4:136) ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--ink);
+  white-space: nowrap;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn-l { height: 52px; padding: 0 20px; border-radius: 14px; font-weight: 600; font-size: 14px; line-height: 1.4; }
+.btn-s { height: 36px; padding: 0 14px; border-radius: 10px; font-weight: 500; font-size: 12px; line-height: 1.4; letter-spacing: 0.2px; }
+.btn-block { width: 100%; }
+.btn-primary { background: var(--mustard); }
+.btn-secondary { background: var(--card); border: 1px solid var(--sage); }
+.btn-ghost { border: 1px solid var(--sage); }
+.btn-danger { background: var(--terracotta); color: var(--paper); }
+
+/* ── Badge (4:154) ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  color: var(--ink);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.row > .badge { align-self: center; }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-진행, .badge-확정 { background: var(--mustard); }
+.badge-경고 { background: var(--terracotta); color: var(--paper); }
+.badge-완료 { background: var(--sage); }
+.badge-중립 { background: var(--card); border: 1px solid var(--sage); }
+
+/* ── Chip (4:161) ── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--sage);
+  background: var(--card);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'] { background: var(--mustard); border-color: var(--ink); }
+
+/* ── Field / Input (4:164) ── */
+.field { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.field-label { font-weight: 500; font-size: 12px; line-height: 1.4; letter-spacing: 0.2px; opacity: 0.75; }
+.field-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--sage);
+  width: 100%;
+}
+.field-box:focus-within { border: 1.5px solid var(--ink); padding: 0 15.5px; }
+.field-box input,
+.field-box textarea {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 0;
+}
+.field-box input::placeholder,
+.field-box textarea::placeholder { color: var(--ink); opacity: 0.45; }
+.field-action { font-weight: 500; font-size: 12px; color: var(--terracotta); letter-spacing: 0.2px; }
+
+/* OTP 박스 */
+.otp { display: flex; gap: 8px; width: 100%; position: relative; }
+.otp-cell {
+  flex: 1;
+  height: 56px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+}
+.otp-cell.is-active { border: 1.5px solid var(--ink); }
+.otp input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  font-size: 16px;
+}
+
+/* ── PhoneInput (36:1270) ── */
+.phone-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 8px 0 18px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--sage);
+  width: 100%;
+}
+.phone-input:focus-within { border-color: var(--ink); }
+.phone-input .prefix { font-size: 15px; }
+.phone-input .divider { width: 1px; height: 20px; background: var(--sage); }
+.phone-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 15px; }
+.phone-input input::placeholder { color: var(--ink); opacity: 0.75; }
+.phone-input .submit {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--mustard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── SocialButton (35:37) ── */
+.social-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.social-btn.kakao { background: #fee500; }
+.social-btn.naver { background: #03c75a; }
+.social-btn.phone { background: var(--mustard); }
+.social-logo-slot { width: 24px; height: 24px; border-radius: 6px; border: 1px dashed rgba(0, 0, 0, 0.5); }
+.social-btn.naver .social-logo-slot { border-color: rgba(255, 255, 255, 0.5); }
+
+/* ── AppBar (4:170) / AppHeader (99:34) ── */
+.app-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 16px;
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.app-bar-title { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; line-height: 1.5; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; }
+.app-header {
+  display: flex;
+  align-items: center;
+  height: 60px;
+  padding: 14px 16px 10px 20px;
+  background: var(--paper);
+  flex-shrink: 0;
+}
+.app-header > span { display: flex; align-items: center; }
+.bell-btn { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+.bell-dot {
+  position: absolute;
+  top: 8.75px;
+  right: 8.75px;
+  width: 6.5px;
+  height: 6.5px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  box-shadow: 0 0 0 1.5px var(--paper);
+}
+
+/* ── Logo (4:112) ── */
+.logo { display: inline-flex; align-items: center; gap: 10px; }
+.logo-word { font-family: var(--font-serif); font-size: 23px; line-height: 1.35; letter-spacing: 0.46px; white-space: nowrap; }
+
+/* ── TabBar (4:255) ── */
+.tab-bar {
+  display: flex;
+  align-items: flex-start;
+  height: 72px;
+  padding: 8px 0 12px;
+  background: var(--paper);
+  border-top: 1px solid var(--card);
+  flex-shrink: 0;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--sage);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+}
+.tab-item.is-active { color: var(--terracotta); }
+.tab-apply { flex: 1; display: flex; align-items: center; justify-content: center; align-self: stretch; }
+.tab-apply-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: var(--mustard);
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 카드·리스트 공통 ── */
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  border: 1px solid var(--sage);
+}
+.divider-h { height: 1px; background: var(--sage); opacity: 0.6; width: 100%; }
+.step-pill {
+  align-self: flex-start;
+  background: var(--mustard);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+}
+
+/* ── Bottom sheet / Dialog ── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(76, 69, 65, 0.45);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.overlay.center { justify-content: center; align-items: center; padding: 0 24px; }
+.sheet {
+  background: var(--paper);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sheet-grip { width: 40px; height: 4px; border-radius: 2px; background: var(--sage); align-self: center; }
+/* Figma 99:785 */
+.dialog {
+  width: 310px; /* Figma 99:785 */
+  max-width: 100%;
+  background: var(--paper);
+  border-radius: 22px;
+  padding: 28px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 28px rgba(76, 69, 65, 0.2);
+}
+.dialog-title { font-family: var(--font-serif); font-weight: 700; font-size: 20px; line-height: normal; text-align: center; }
+
+/* 토스트 */
+.toast {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 96px;
+  z-index: 60;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* Input 컴포넌트(4:164) 형태: 세이지 라벨, 48 높이 */
+.field-form .field-label { color: var(--sage); opacity: 1; }
+.field-form .field-box { height: 48px; border-radius: 12px; }
+
+/* 완료·결과 화면 공통 (3-5, 4-2a, 4-2b) */
+.done-body { align-items: center; gap: 18px; padding: 40px 20px 24px; }
+.done-check {
+  width: 80px;
+  height: 80px;
+  border-radius: 40px;
+  background: var(--mustard);
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kv-box { width: 100%; margin: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 18px; border-radius: 16px; background: var(--card); }
+.kv-box > div { display: flex; gap: 12px; }
+.kv-box dt { width: 72px; flex-shrink: 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+.kv-box dd { margin: 0; flex: 1; font-weight: 600; font-size: 14px; line-height: 1.4; }
+
+/* 가운데 정렬 시트 (체크인·캘린더, Figma pt12 px24 pb36) */
+.sheet.sheet-center { align-items: center; gap: 14px; padding: 12px 24px 36px; text-align: center; }
+.sheet-spacer8 { height: 8px; width: 1px; flex-shrink: 0; }
+.sheet-spacer6 { height: 6px; width: 1px; flex-shrink: 0; }
+.dialog > .row { width: 100%; }
+.dialog > h3 { text-align: center; }

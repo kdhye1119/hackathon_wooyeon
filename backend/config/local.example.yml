@@ -1,0 +1,5 @@
+# 이 파일을 config/local.yml 로 복사한 뒤 값을 채우세요. (config/local.yml 은 git 에 올라가지 않습니다)
+spring:
+  datasource:
+    username: root
+    password: your-mysql-password

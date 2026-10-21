@@ -1,0 +1,100 @@
+.rooms-body { gap: 24px; padding: 12px 20px 28px; }
+.room-row { width: 100%; text-align: left; }
+.room-row.past { opacity: 0.7; }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.unread-count {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--terracotta);
+  color: var(--paper);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.list-card .room-row:first-child .date-tile { background: var(--mustard); }
+.list-card .room-row.past .date-tile { background: var(--card); }
+
+/* 4-3 단체방 */
+.chat { position: relative; }
+.chat-header { display: flex; align-items: center; gap: 10px; padding: 8px 16px 12px; border-bottom: 1px solid var(--card); flex-shrink: 0; }
+.request-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: normal;
+  white-space: nowrap;
+}
+.chat-notice { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--card); flex-shrink: 0; }
+.chat-notice p { flex: 1; }
+.chat-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 56px; }
+.day-pill { display: flex; justify-content: center; }
+.day-pill span { padding: 6px 12px; border-radius: 999px; background: var(--card); color: var(--sage); font-size: 11px; line-height: 1.4; letter-spacing: 0.2px; }
+.sys-card { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--card); flex-shrink: 0; }
+.sys-card.topics { background: var(--mustard); border: 1px solid var(--ink); }
+.topic-row { display: flex; align-items: flex-start; gap: 8px; }
+.topic-row p { flex: 1; }
+.topic-no {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--mustard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.bubble-row { display: flex; align-items: flex-start; gap: 8px; }
+.bubble-row.mine { justify-content: flex-end; }
+.bubble { max-width: 244px; padding: 8px 12px; border-radius: 14px; background: var(--card); font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.bubble-row.mine .bubble { background: var(--mustard); max-width: 224px; }
+.chat-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.feedback-cta { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--mustard); font-weight: 600; font-size: 13px; text-align: left; }
+.feedback-cta .label { flex: 1; }
+.topic-suggest { position: absolute; left: 0; right: 0; bottom: 83px; display: flex; justify-content: center; padding: 8px 16px 4px; pointer-events: none; }
+.topic-suggest button {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--mustard);
+  border: 1px solid var(--ink);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: normal;
+}
+.chat-input { display: flex; align-items: center; gap: 10px; padding: 10px 16px 24px; border-top: 1px solid var(--card); background: var(--paper); flex-shrink: 0; }
+.chat-input input { flex: 1; min-width: 0; padding: 12px 16px; border-radius: 999px; border: 0; outline: 0; background: var(--card); font-size: 15px; line-height: 1.6; }
+.chat-input input::placeholder { color: var(--sage); }
+.chat-input button { width: 44px; height: 44px; border-radius: 22px; background: var(--mustard); display: flex; align-items: center; justify-content: center; }
+.chat-input button:disabled { opacity: 0.6; }
+
+/* 4-4 운영진에게 요청 */
+.request-option { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 14px; border: 1px solid var(--sage); background: var(--card); text-align: left; }
+.request-option.on { border: 1.5px solid var(--ink); padding: 12.5px 15.5px; }
+.radio { width: 22px; height: 22px; border-radius: 11px; border: 1.5px solid var(--sage); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.radio.on { background: var(--mustard); border-color: var(--mustard); }
+.request-text { height: 88px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--sage); background: var(--card); resize: none; outline: 0; font-size: 15px; line-height: 1.6; }
+.request-text:focus { border-color: var(--ink); }
+.request-text::placeholder { color: var(--ink); opacity: 0.45; }
+.sys-card .topic-sub { margin-top: 6px; }

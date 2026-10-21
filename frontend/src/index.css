@@ -1,0 +1,186 @@
+/* 우연한 식탁 · Foundations (Figma 00 디자인 시스템 3:33) */
+:root {
+  --paper: #fcf0da;
+  /* 크림 페이퍼 · 배경 */
+  --sage: #aeac78;
+  /* 올리브 세이지 · 보조 */
+  --ink: #4c4541;
+  /* 잉크 브라운 · 텍스트 */
+  --mustard: #f2c46a;
+  /* 머스터드 · CTA */
+  --card: #f5e4c0;
+  /* 카드 */
+  --terracotta: #b5532f;
+  /* 테라코타 · 강조 */
+
+  --font-serif: 'Gowun Batang', serif;
+  --font-sans: 'IBM Plex Sans KR', system-ui, -apple-system, sans-serif;
+
+  --app-width: 390px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: #e9dcc2;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+}
+
+/* ── Type scale (Figma 3:77) ── */
+.t-display-l {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+}
+
+.t-display-m {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+}
+
+.t-h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+
+.t-h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.45;
+  letter-spacing: -0.2px;
+}
+
+.t-h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.t-body-m {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.t-body-m-strong {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.t-body-s {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.t-label-m {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.t-label-s {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+}
+
+.t-caption {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+}
+
+.muted {
+  opacity: 0.75;
+}
+
+.c-terracotta {
+  color: var(--terracotta);
+}
+
+.c-sage {
+  color: var(--sage);
+}
+
+.underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.2s !important;
+  }
+}

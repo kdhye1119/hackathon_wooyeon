@@ -1,0 +1,34 @@
+.intro { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--ink); }
+.intro .abs { position: absolute; display: block; }
+.intro-dark { position: absolute; inset: 0; }
+.intro-brand { position: absolute; inset: 0; }
+.intro-title,
+.intro-tagline,
+.intro-by,
+.intro-hint,
+.login-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: normal;
+}
+.intro-title { font-size: 40px; letter-spacing: 1.6px; color: var(--paper); }
+.intro-tagline { font-size: 14px; letter-spacing: 0.84px; color: var(--paper); }
+.intro-by { font-size: 13px; color: var(--paper); }
+.intro-hint { font-family: var(--font-sans); font-size: 13px; letter-spacing: 0.52px; color: var(--paper); opacity: 0.75; }
+.intro .intro-divider { height: 6px; display: flex; align-items: center; justify-content: space-between; }
+.intro-divider span { height: 1px; background: var(--c); }
+.intro-divider i { width: 4.5px; height: 4.5px; background: var(--c); transform: rotate(-45deg); }
+.plate-tap { border-radius: 50%; }
+.plate-tap:focus-visible { outline: 2px dashed var(--paper); outline-offset: 4px; }
+
+.intro-login { position: absolute; inset: 0; background: var(--paper); }
+.login-title { font-size: 36px; letter-spacing: 1.44px; color: var(--ink); margin: 0; }
+.intro .or-divider { display: flex; align-items: center; gap: 12px; height: 18px; }
+.or-divider span { flex: 1; height: 1px; background: var(--sage); }
+.or-divider em { font-style: normal; font-size: 12px; opacity: 0.75; }
+.intro .social-row { left: 0; right: 0; display: flex; justify-content: center; gap: 20px; }
+.guest-link { left: 0; right: 0; text-align: center; font-size: 13px; opacity: 0.75; text-decoration: underline; text-underline-offset: 2px; }

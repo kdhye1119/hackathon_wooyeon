@@ -1,0 +1,60 @@
+.apply-body { gap: 20px; padding: 8px 20px 32px; }
+.apply-steps { display: flex; flex-direction: column; gap: 8px; }
+.apply-steps p { display: flex; gap: 8px; }
+.apply-bars { display: flex; gap: 6px; }
+.apply-bars span { flex: 1; height: 4px; border-radius: 2px; background: var(--card); }
+.apply-bars span.on { background: var(--mustard); }
+.apply-section { display: flex; flex-direction: column; gap: 12px; }
+.loaded-profile { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--card); }
+.loaded-profile p { flex: 1; }
+.agree-box { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 16px; background: var(--card); }
+.check-row { display: flex; align-items: center; gap: 10px; text-align: left; font-size: 15px; line-height: 1.6; }
+.check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--sage);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.check-box.on { background: var(--mustard); border-color: var(--mustard); }
+.other-region { display: flex; align-items: center; gap: 6px; color: var(--sage); font-size: 13px; line-height: 1.55; }
+.other-region > span:first-child { color: var(--ink); }
+.date-option,
+.ticket-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--sage);
+  background: var(--card);
+  text-align: left;
+  width: 100%;
+}
+.ticket-option { padding: 16px; }
+.date-option.on,
+.ticket-option.on { border-color: var(--ink); }
+.date-option .check-row,
+.ticket-option .check-row { pointer-events: none; }
+.date-option-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.summary-box { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 16px; background: var(--card); }
+.hint-box { display: flex; align-items: flex-start; gap: 8px; padding: 12px; border-radius: 16px; background: var(--card); }
+.policy-box { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--terracotta); color: var(--paper); }
+.pay-footer { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px 28px; background: var(--card); flex-shrink: 0; }
+.select-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 130px;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--sage);
+  background: var(--card);
+}
+.select-box select { appearance: none; border: 0; background: transparent; outline: 0; font-size: 15px; width: 100%; padding-right: 16px; }
+.select-box img { position: absolute; right: 16px; pointer-events: none; }
+.policy-outline { width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 14px 18px; border-radius: 16px; border: 1px solid var(--terracotta); }

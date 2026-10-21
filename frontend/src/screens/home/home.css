@@ -1,0 +1,138 @@
+.home-body { gap: 28px; padding: 12px 20px 28px; }
+.home-section { display: flex; flex-direction: column; gap: 12px; }
+.empty-box { border: 1px dashed var(--sage); border-radius: 18px; padding: 22px 0; text-align: center; }
+
+.list-card { border: 1px solid var(--sage); border-radius: 18px; padding: 0 16px; background: var(--paper); }
+.list-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+.list-row + .list-row { border-top: 1px solid var(--sage); }
+.list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.list-main p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.date-tile {
+  width: 48px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: normal;
+}
+.date-tile b { font-family: var(--font-serif); font-weight: 700; font-size: 19px; }
+.date-tile span { font-weight: 500; font-size: 11px; opacity: 0.75; }
+
+.review-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 14px 18px;
+  border-radius: 16px;
+  background: var(--mustard);
+  text-align: left;
+}
+.review-banner span:nth-child(2) { flex: 1; font-weight: 600; font-size: 14px; line-height: 1.4; }
+
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--card); }
+.seg button { padding: 4px 10px; border-radius: 999px; font-weight: 600; font-size: 11px; line-height: normal; opacity: 0.75; }
+.seg button[aria-selected='true'] { background: var(--ink); color: var(--paper); opacity: 1; }
+
+.carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  margin: 0 -20px;
+  padding: 0 20px;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+.review-card {
+  flex: 0 0 260px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--sage);
+  border-radius: 18px;
+  background: var(--paper);
+}
+.quote { font-family: var(--font-serif); font-weight: 700; font-size: 28px; line-height: 20px; color: var(--mustard); }
+.review-text { font-family: var(--font-serif); font-size: 15px; line-height: 1.6; }
+.like {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sage);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: normal;
+}
+.like.on { border-color: var(--terracotta); background: var(--card); color: var(--terracotta); }
+.nps {
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.2px;
+}
+
+/* 3-6 알림 */
+.noti-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sage);
+  text-align: left;
+  width: 100%;
+}
+.noti-row.unread { background: var(--card); }
+.noti-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.noti-row.unread .noti-icon { background: var(--mustard); border: 0; }
+.noti-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+
+/* 오늘 모임 */
+.date-tile.today { background: var(--terracotta); color: var(--paper); }
+
+/* 4-5b ~ 4-8 체크인 시트 */
+
+.checkin-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 40px;
+  background: var(--card);
+  border: 1.5px solid var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkin-icon.ok { background: var(--mustard); border-color: var(--ink); }
+.checkin-icon.warn { border-color: var(--terracotta); }
+.checkin-actions { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.loading-dots { display: flex; gap: 6px; height: 8px; }
+.loading-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--sage); animation: dot 1.2s infinite ease-in-out; }
+.loading-dots i:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dot {
+  0%, 100% { background: var(--sage); }
+  33% { background: var(--mustard); }
+}

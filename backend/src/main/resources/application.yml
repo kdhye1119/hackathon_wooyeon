@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: dinner
+  config:
+    # DB 비밀번호 등 로컬 비밀값 (git 제외). 예시는 config/local.example.yml 참고
+    import: optional:file:./config/local.yml
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/dinner?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+        jdbc:
+          time_zone: Asia/Seoul
+  jackson:
+    time-zone: Asia/Seoul
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    persist-authorization: true
+  default-produces-media-type: application/json
+
+server:
+  port: 8080
+
+app:
+  auth:
+    token-secret: ${TOKEN_SECRET:change-me-wassup-dinner-hackathon-secret-key}
+    token-ttl-hours: 720
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000
+  automation:
+    enabled: true
+    tick-ms: 10000
+  notification:
+    # 데모용: 발송 실패 시뮬레이션 비율 (0.0 ~ 1.0)
+    failure-rate: 0.0
+    max-retries: 3

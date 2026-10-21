@@ -1,0 +1,155 @@
+/* 후기/일기 탭 */
+.review-tabs { display: flex; gap: 4px; padding: 4px; margin: 0 20px 4px; border-radius: 12px; background: var(--card); flex-shrink: 0; }
+.review-tabs button { flex: 1; padding: 10px 0; border-radius: 9px; font-weight: 600; font-size: 14px; line-height: 1.4; opacity: 0.75; }
+.review-tabs button[aria-selected='true'] { background: var(--mustard); opacity: 1; }
+.review-tabs.inline { margin: 0; border: 1px solid var(--sage); }
+.review-tabs.inline button { padding: 9px 0; }
+
+/* 5-1 후기 */
+.review-body { gap: 22px; padding: 8px 20px 32px; }
+.review-section { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+.checkin-card { display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 16px; border: 1px solid var(--ink); background: var(--card); flex-shrink: 0; }
+.checkin-badge { width: 40px; height: 40px; border-radius: 20px; background: var(--mustard); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.star-row { display: flex; align-items: center; gap: 4px; }
+.star-row > span { flex: 1; }
+.star-row button { display: flex; }
+.rejoin { display: flex; gap: 10px; align-items: flex-start; }
+.rejoin button { flex: 1; padding: 14px 0; border-radius: 16px; border: 1px solid var(--sage); background: var(--card); font-weight: 600; font-size: 14px; line-height: 20px; color: rgba(76, 69, 65, 0.75); }
+.rejoin button[aria-pressed='true'] { background: var(--mustard); border: 1.5px solid var(--ink); color: var(--ink); }
+.pref-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--card); flex-shrink: 0; }
+.chat-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.report-row { display: flex; align-items: center; gap: 10px; padding: 14px; border-radius: 16px; background: var(--terracotta); color: var(--paper); text-align: left; flex-shrink: 0; }
+.report-row .label { flex: 1; font-weight: 600; font-size: 14px; line-height: 1.4; }
+.nps-value { font-family: var(--font-serif); font-weight: 700; font-size: 22px; line-height: normal; }
+.nps-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; margin: 0; }
+.nps-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--mustard) var(--p), var(--card) var(--p));
+}
+.nps-slider::-moz-range-track { height: 8px; border-radius: 4px; background: var(--card); }
+.nps-slider::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--mustard); }
+.nps-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+.nps-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 2px solid var(--ink); }
+
+/* 5-2 일기 */
+.diary-body { align-items: center; gap: 26px; padding: 20px 20px 32px; }
+.diary-head { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.diary-date { font-family: var(--font-serif); font-weight: 700; font-size: 30px; line-height: normal; letter-spacing: 0.6px; text-align: center; }
+.diary-sub { font-family: var(--font-serif); font-size: 13px; letter-spacing: 0.78px; opacity: 0.75; text-align: center; }
+.diary-rule { display: flex; align-items: center; gap: 8px; }
+.diary-rule span { width: 64px; height: 1px; background: var(--ink); }
+.diary-rule i { width: 4px; height: 4px; background: var(--ink); transform: rotate(-45deg); }
+.diary-hint { font-family: var(--font-serif); font-size: 12px; line-height: 1.45; opacity: 0.75; }
+.polaroid-stage { position: relative; width: 342px; max-width: 100%; height: 268px; display: flex; justify-content: center; flex-shrink: 0; }
+.polaroid {
+  position: relative;
+  width: 232px;
+  height: 256px;
+  margin-top: 6px;
+  padding: 11px;
+  border-radius: 4px;
+  border: 1px solid var(--sage);
+  background: var(--paper);
+  box-shadow: 0 6px 16px rgba(76, 69, 65, 0.16);
+  transform: rotate(3deg);
+}
+.polaroid-photo { position: relative; height: 190px; }
+.cover-tag { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 600; font-size: 11px; line-height: normal; }
+.polaroid-caption { display: block; width: 100%; margin-top: 10px; border: 0; outline: 0; background: transparent; font-family: var(--font-serif); font-size: 14px; opacity: 0.85; padding: 0 2px; }
+.tape { position: absolute; top: -5px; left: 50%; margin-left: -35px; width: 70px; height: 20px; background: var(--mustard); transform: rotate(-4deg); }
+.photo-strip { display: flex; align-items: center; gap: 10px; height: 76px; flex-shrink: 0; }
+.mini-polaroid { width: 64px; height: 72px; padding: 3px; border-radius: 3px; border: 1px solid var(--sage); background: var(--paper); box-shadow: 0 3px 8px rgba(76, 69, 65, 0.12); touch-action: none; }
+.mini-polaroid span { display: block; width: 56px; height: 54px; }
+.add-photo { width: 64px; height: 72px; border-radius: 6px; border: 1px dashed var(--sage); display: flex; align-items: center; justify-content: center; }
+.moods { display: flex; gap: 18px; }
+.mood { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.mood-face { width: 58px; height: 58px; border-radius: 30px; display: flex; align-items: center; justify-content: center; padding: 5px; opacity: 0.45; }
+.mood.on .mood-face { opacity: 1; background: var(--card); border: 1.5px solid var(--ink); }
+.mood-face.small { width: 24px; height: 24px; padding: 0; opacity: 1; }
+.mood-label { font-family: var(--font-serif); font-size: 13px; }
+.mood:not(.on) .mood-label { opacity: 0.75; }
+.journal {
+  width: 100%;
+  border-radius: 14px;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, var(--sage) 29px, var(--sage) 30px) 0 15px / 100% calc(100% - 15px) no-repeat, var(--card);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.journal textarea { display: block; width: 100%; height: 204px; padding-top: 17px; border: 0; outline: 0; resize: none; background: transparent; font-family: var(--font-serif); font-size: 16px; line-height: 30px; }
+.mini-table { position: relative; width: 342px; max-width: 100%; height: 212px; }
+.mini-seat { position: absolute; width: 50px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.mini-avatar { position: relative; width: 34px; height: 34px; border-radius: 17px; background: var(--mustard); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; }
+.mini-avatar.me { border: 1.5px solid var(--ink); }
+.mini-avatar img { position: absolute; top: -2px; right: -2px; }
+.mini-name { font-family: var(--font-serif); font-size: 12px; }
+
+/* 5-3 캘린더 */
+.cal-body { gap: 16px; padding: 8px 16px 20px; }
+.cal-title { flex: 1; font-family: var(--font-serif); font-weight: 700; font-size: 22px; line-height: normal; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 6px; }
+.cal-week { text-align: center; font-weight: 500; font-size: 12px; line-height: 1.4; opacity: 0.75; padding-bottom: 10px; }
+.cal-week.thu { color: var(--terracotta); opacity: 1; }
+.cal-cell { height: 62px; display: flex; justify-content: center; padding: 2px 0; }
+.cal-cell:disabled { cursor: default; }
+.cal-day { width: 30px; height: 30px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 500; font-size: 12px; line-height: 1.4; opacity: 0.75; }
+.cal-day.today { background: var(--ink); color: var(--paper); opacity: 1; }
+.cal-tile { position: relative; width: 44px; height: 56px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding-top: 5px; gap: 1px; white-space: nowrap; }
+.cal-tile b { font-weight: 600; font-size: 12px; line-height: 16px; }
+.cal-tile small { font-weight: 600; font-size: 9px; line-height: 12px; }
+.cal-tile em { font-style: normal; font-weight: 500; font-size: 9px; line-height: 12px; }
+.cal-tile.applied { background: var(--mustard); }
+.cal-tile.matched { background: var(--sage); }
+.cal-tile.logo { background: var(--card); border: 1px solid var(--sage); align-items: flex-start; padding: 3px 0 0 5px; }
+.cal-tile.logo img:not(.review-dot) { margin: 2px 0 0 2px; }
+.cal-tile.logo .review-dot { position: absolute; top: -4px; right: -2px; }
+.cal-tile.photo { border: 2px solid var(--ink); align-items: flex-start; padding: 2px 0 0 4px; }
+.cal-tile.photo b { color: var(--paper); font-weight: 500; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; line-height: 1.4; opacity: 0.75; }
+.cal-legend i { width: 10px; height: 12px; border-radius: 3px; }
+.cal-legend i.dot { width: 6px; height: 6px; border-radius: 3px; background: var(--terracotta); }
+.recent-diary { display: flex; align-items: center; gap: 14px; padding: 12px 16px 12px 12px; border-radius: 16px; background: var(--card); text-align: left; }
+.recent-thumb { width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0; }
+.recent-text { font-family: var(--font-serif); font-size: 13px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 5-4 / 5-5 날짜 시트 (Figma 74:642, 74:876) */
+.sheet.day-sheet { gap: 18px; position: relative; }
+.day-trash { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; }
+.day-head { display: flex; flex-direction: column; align-items: center; gap: 4px; line-height: normal; white-space: nowrap; }
+.day-head h2 { font-family: var(--font-serif); font-weight: 700; font-size: 24px; letter-spacing: 0.48px; }
+.day-head p { font-family: var(--font-serif); font-size: 12px; letter-spacing: 0.72px; opacity: 0.75; }
+.day-photos { position: relative; width: 342px; max-width: 100%; height: 214px; flex-shrink: 0; cursor: pointer; }
+.day-photo-back { position: absolute; left: calc(50% + 24px); top: 11px; width: 150px; height: 180px; border-radius: 4px; opacity: 0.85; transform: rotate(-6deg); }
+.day-polaroid { position: absolute; left: calc(50% - 92px); top: 7px; width: 176px; height: 206px; border-radius: 4px; background: var(--card); box-shadow: 0 6px 14px rgba(76, 69, 65, 0.18); transform: rotate(2deg); overflow: hidden; }
+.day-polaroid-photo { position: absolute; left: 8px; top: 8px; width: 160px; height: 158px; }
+.day-polaroid p { position: absolute; left: 10px; top: 176px; font-family: var(--font-serif); font-size: 12px; opacity: 0.85; white-space: nowrap; }
+.page-dots { display: flex; gap: 5px; }
+.page-dots i { width: 5px; height: 5px; border-radius: 3px; background: var(--sage); }
+.page-dots i.on { width: 14px; background: var(--ink); }
+.mood-face.small { width: 28px; height: 28px; padding: 0; opacity: 1; border: 0; background: none; }
+.day-text { width: 100%; padding: 14px 16px; border-radius: 14px; background: var(--card); font-family: var(--font-serif); font-size: 15px; line-height: 26px; text-align: left; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-height: 80px; }
+.day-people { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-family: var(--font-serif); font-size: 14px; line-height: normal; }
+.day-people span { display: inline-flex; align-items: center; gap: 4px; opacity: 0.75; }
+.day-people span.on { opacity: 1; }
+.empty-polaroid { width: 176px; height: 206px; margin: 3px 0; border: 1px dashed var(--sage); border-radius: 4px; background: var(--card); transform: rotate(2deg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.empty-polaroid span { font-family: var(--font-serif); font-size: 13px; opacity: 0.75; }
