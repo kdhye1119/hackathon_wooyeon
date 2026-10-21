@@ -1,51 +1,131 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AppBar, AppHeader, Badge, Body, Button, Screen, TabBar } from '../../components/ui'
+import { AppBar, AppHeader, Badge, Body, Button, Dialog, Screen, Sheet, TabBar, TextField, useToast } from '../../components/ui'
 import { Icon } from '../../components/Icon'
-import { get, session } from '../../lib/api'
+import { get, post, session } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
-import { INTERESTS, labelOf, loadDraft } from '../../lib/options'
-import type { PaymentDto, TicketDto } from '../../lib/types'
+import { INTERESTS, REGIONS, labelOf, loadDraft } from '../../lib/options'
+import type { ApplicationView, PaymentDto, TicketDto } from '../../lib/types'
+import { demoApplications } from '../../lib/demo'
 import './my.css'
 
-type Profile = { name: string | null; mbti: string | null; interests: string[] }
-type HistoryItem = {
-  applicationId: number
-  slotLabel: string
-  region: string
-  startAt: string
-  tableCode: string | null
-  venueName: string | null
-  attendanceStatus: string
-  feedbackSubmitted: boolean
-  feedbackAvailable: boolean
-  memberCount?: number
-  note?: string
-}
-
+type Profile = { name: string | null; mbti: string | null; interests: string[]; phone?: string }
 const DAY = ['일', '월', '화', '수', '목', '금', '토']
 const md = (iso: string) => `${fmt.md(iso)} (${DAY[new Date(iso).getDay()]})`
 
 const demoProfile: Profile = { name: '김서윤', mbti: 'ENFP', interests: ['EXHIBITION_ART', 'TRAVEL', 'FOOD_CAFE'] }
-const demoHistory: HistoryItem[] = [
-  { applicationId: 99, slotLabel: '', region: '홍대/합정', startAt: '2026-10-15T19:30:00', tableCode: null, venueName: '모래정원', attendanceStatus: 'ATTENDED', feedbackSubmitted: true, feedbackAvailable: true, memberCount: 5 },
-  { applicationId: 100, slotLabel: '', region: '홍대/합정', startAt: '2026-10-08T19:30:00', tableCode: null, venueName: '연남 비스트로', attendanceStatus: 'ATTENDED', feedbackSubmitted: false, feedbackAvailable: true, memberCount: 6 },
-  { applicationId: 90, slotLabel: '', region: '을지로/종로', startAt: '2026-09-24T19:30:00', tableCode: null, venueName: null, attendanceStatus: 'NO_MATCH', feedbackSubmitted: false, feedbackAvailable: false, note: '매칭 실패 → 10.08 이동' },
-]
 const demoTickets: TicketDto[] = [{ id: 1, product: 'SINGLE', productLabel: '1회권', totalCount: 1, remainingCount: 1, expiresAt: '2027-04-15T23:59:59', usable: true }]
 
 const shortInterest = (code: string) => labelOf(INTERESTS, code).split(/[/ ]/)[0]
+
+type Tone = '확정' | '진행' | '경고' | '중립' | '완료'
+/** 참가 이력 한 줄: 참석만이 아니라 신청·결제·매칭·취소·환불까지 모든 결과 */
+function historyStatus(a: ApplicationView): { label: string; tone: Tone; note?: string } {
+  const refund = a.paymentStatus === 'REFUNDED' ? '환불 완료' : a.paymentStatus.startsWith('REFUND_') && a.paymentStatus !== 'REFUND_AVAILABLE' ? '환불 진행 중' : ''
+  if (a.appStatus === 'CANCELED') return { label: '신청 취소', tone: '중립', note: refund || (a.paymentStatus === 'PENDING' ? '결제 전 취소' : '환불 없음') }
+  if (a.attendanceStatus === 'ATTENDED') return { label: '참석', tone: '완료', note: a.feedbackSubmitted ? '후기 완료' : '후기 미작성' }
+  if (a.attendanceStatus === 'NO_SHOW') return { label: '불참', tone: '경고' }
+  if (a.attendanceStatus === 'CANCELED_EARLY' || a.attendanceStatus === 'CANCELED_LATE') return { label: a.attendanceStatus === 'CANCELED_LATE' ? '당일 취소' : '참석 취소', tone: '중립', note: refund || undefined }
+  if (a.matchStatus === 'TRANSFERRED') return { label: '일정 이동', tone: '진행', note: '매칭 실패 → 다른 일정' }
+  if (a.paymentStatus === 'REFUNDED') return { label: '환불 완료', tone: '중립' }
+  if (a.matchStatus === 'NO_MATCH') return { label: '매칭 종료', tone: '중립', note: a.resolution?.choice === 'KEEP_TICKET' ? '이용권 보관' : refund || undefined }
+  if (a.matchStatus === 'ALTERNATIVE_OFFERED') return { label: '매칭 실패', tone: '경고', note: '선택 대기' }
+  if (a.matchStatus === 'EXCEPTION') return { label: '운영자 확인 중', tone: '경고' }
+  if (a.paymentStatus === 'PENDING' || a.paymentStatus === 'FAILED') return { label: a.paymentStatus === 'FAILED' ? '결제 실패' : '결제 대기', tone: '경고' }
+  if (a.matchStatus === 'CONFIRMED') return { label: '참석 예정', tone: '진행' }
+  if (a.matchStatus === 'REALLOCATING') return { label: '재배치 중', tone: '진행' }
+  return { label: '매칭 대기', tone: '진행' }
+}
+
+const startOf = (a: ApplicationView) => (a.slots.find((s) => s.assigned) ?? a.slots[0])?.startAt ?? a.submittedAt
+/** 행사 날짜 최신순 */
+const byLatest = (list: ApplicationView[]) => [...list].sort((x, y) => startOf(y).localeCompare(startOf(x)) || y.id - x.id)
+
+function HistoryRow({ a }: { a: ApplicationView }) {
+  const navigate = useNavigate()
+  const s = a.slots.find((x) => x.assigned) ?? a.slots[0]
+  const st = historyStatus(a)
+  const regions = [...new Set(a.slots.map((x) => labelOf(REGIONS, x.region)))]
+  const where = a.table ? labelOf(REGIONS, s?.region ?? '') : regions.join(', ')
+  return (
+    <button className="history-row" onClick={() => navigate(a.attendanceStatus === 'ATTENDED' ? `/review/${a.id}` : `/applications/${a.id}`)}>
+      <span className="stack" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+        <span className="t-label-m">{md(startOf(a))}</span>
+        <span className="t-caption c-sage">
+          {[where, a.table?.venueName, a.table ? `${a.table.memberCount}명` : null].filter(Boolean).join(', ')}
+        </span>
+      </span>
+      <span className="stack history-status">
+        <Badge tone={st.tone} dot={false}>
+          {st.label}
+        </Badge>
+        {st.note && <span className="t-caption c-sage">{st.note}</span>}
+      </span>
+    </button>
+  )
+}
 
 /** 6-1 마이 */
 export function MyPage() {
   const navigate = useNavigate()
   const profile = useApi(() => get<Profile>('/api/me/profile'), demoProfile)
-  const history = useApi(() => get<HistoryItem[]>('/api/me/history'), demoHistory)
+  const apps = useApi(() => get<ApplicationView[]>('/api/applications'), demoApplications)
+  const history = byLatest(apps.data)
   const tickets = useApi(() => get<TicketDto[]>('/api/me/tickets'), demoTickets)
   const draft = loadDraft()
   const p = profile.demo && draft.name ? { name: draft.name, mbti: draft.mbti, interests: draft.interests } : profile.data
   const kept = tickets.data.filter((t) => t.usable && t.totalCount > 0).reduce((n, t) => n + t.remainingCount, 0)
   const member = tickets.data.find((t) => t.usable && t.totalCount === 0)
   const name = p.name || session.user?.name || '참가자'
+  const toast = useToast()
+  const [withdraw, setWithdraw] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const policy = useApi(() => get<{ retentionPolicy: string }>('/api/me/withdraw'), {
+    retentionPolicy: '탈퇴하면 이름, 연락처, 인스타그램, 직업, 식사 조건은 바로 삭제돼요. 결제/환불 기록은 5년, 신고/차단 기록은 1년간 개인을 알아볼 수 없게 보관한 뒤 삭제해요.',
+  })
+  const [phoneSheet, setPhoneSheet] = useState(false)
+  const [newPhone, setNewPhone] = useState('')
+  const [code, setCode] = useState('')
+  const [codeSent, setCodeSent] = useState(false)
+  const sendCode = async () => {
+    try {
+      const r = await post<{ devCode: string | null }>('/api/auth/otp', { phone: newPhone, purpose: 'CHANGE_PHONE' })
+      setCodeSent(true)
+      toast.show(r.devCode ? `인증번호 ${r.devCode} (시연용, 문자 대신 표시)` : '인증번호를 보냈어요')
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '인증번호를 보내지 못했어요')
+    }
+  }
+  const changePhone = async () => {
+    setBusy(true)
+    try {
+      const p = await post<Profile>('/api/me/phone', { phone: newPhone, code })
+      profile.setData({ ...profile.data, ...p })
+      setPhoneSheet(false)
+      setNewPhone('')
+      setCode('')
+      setCodeSent(false)
+      toast.show('연락처를 바꿨어요. 다음 로그인부터 새 번호를 써 주세요')
+    } catch (e) {
+      toast.show(e instanceof Error ? e.message : '바꾸지 못했어요')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const doWithdraw = async () => {
+    if (profile.demo) return setWithdraw(false)
+    setBusy(true)
+    try {
+      await post('/api/me/withdraw')
+      session.clear()
+      navigate('/start', { replace: true })
+    } catch (e) {
+      setWithdraw(false)
+      toast.show(e instanceof Error ? e.message : '탈퇴하지 못했어요')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <Screen>
@@ -63,6 +143,16 @@ export function MyPage() {
           </Button>
         </div>
 
+        {!profile.demo && profile.data.phone && (
+          <div className="ticket-link">
+            <Icon name="phone" color="var(--terracotta)" />
+            <span className="t-h3">{profile.data.phone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}</span>
+            <Button size="S" variant="secondary" onClick={() => setPhoneSheet(true)}>
+              연락처 변경
+            </Button>
+          </div>
+        )}
+
         <button className="ticket-link" onClick={() => navigate('/my/tickets')}>
           <Icon name="ticket" color="var(--terracotta)" />
           <span className="t-h3">{member ? `${member.productLabel}, ${member.expiresAt.slice(0, 10).replace(/-/g, '.')}까지` : `보관 이용권 ${kept}장`}</span>
@@ -70,48 +160,69 @@ export function MyPage() {
         </button>
 
         <section>
-          <h3 className="t-h3">참가 이력</h3>
-          {history.data.length === 0 && <p className="t-body-s muted" style={{ padding: '14px 0' }}>아직 참가한 식탁이 없어요</p>}
-          {history.data.map((h) => {
-            const attended = h.attendanceStatus === 'ATTENDED'
-            return (
-              <button key={h.applicationId} className="history-row" onClick={() => (attended ? navigate(`/review/${h.applicationId}`) : undefined)} disabled={!attended}>
-                <span className="stack" style={{ flex: 1, gap: 2 }}>
-                  <span className="t-label-m">{md(h.startAt)}</span>
-                  <span className="t-caption c-sage">
-                    {h.region}
-                    {h.memberCount ? `, ${h.memberCount}명` : ''}
-                  </span>
-                </span>
-                {attended ? (
-                  <>
-                    <Badge dot={false}>참석</Badge>
-                    <span className="row t-caption c-terracotta" style={{ gap: 4 }}>
-                      <Icon name="check" size={14} />
-                      {h.feedbackSubmitted ? '후기 완료' : '후기 미작성'}
-                    </span>
-                  </>
-                ) : (
-                  <Badge tone={h.attendanceStatus === 'NO_SHOW' ? '경고' : h.note ? '진행' : '중립'} dot={false}>
-                    {h.note ?? (h.attendanceStatus === 'NO_SHOW' ? '불참' : h.attendanceStatus === 'CANCELED_EARLY' || h.attendanceStatus === 'CANCELED_LATE' ? '취소' : '예정')}
-                  </Badge>
-                )}
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <h3 className="t-h3">참가 이력</h3>
+            {history.length > 5 && (
+              <button className="t-caption c-sage underline" onClick={() => navigate('/my/history')}>
+                자세히 보기
               </button>
-            )
-          })}
+            )}
+          </div>
+          {history.length === 0 && <p className="t-body-s muted" style={{ padding: '14px 0' }}>아직 신청한 식탁이 없어요</p>}
+          {history.slice(0, 5).map((a) => (
+            <HistoryRow key={a.id} a={a} />
+          ))}
         </section>
 
-        <button
-          className="logout t-body-s muted underline"
-          onClick={() => {
-            session.clear()
-            navigate('/start', { replace: true })
-          }}
-        >
-          로그아웃
-        </button>
+        <div className="row" style={{ gap: 16, justifyContent: 'center' }}>
+          <button
+            className="logout t-body-s muted underline"
+            onClick={() => {
+              session.clear()
+              navigate('/start', { replace: true })
+            }}
+          >
+            로그아웃
+          </button>
+          <button className="logout t-body-s muted underline" onClick={() => setWithdraw(true)}>
+            회원 탈퇴
+          </button>
+        </div>
       </Body>
       <TabBar />
+      <Dialog open={withdraw} onClose={() => setWithdraw(false)}>
+        <Icon name="alert" size={28} />
+        <h3 className="dialog-title">탈퇴할까요?</h3>
+        <p className="t-body-s muted" style={{ textAlign: 'center' }}>
+          진행 중인 신청은 환불 규정에 따라 취소돼요. 확정된 모임이 있으면 모임이 끝난 뒤 탈퇴할 수 있어요.
+        </p>
+        <p className="t-caption muted" style={{ textAlign: 'center' }}>
+          {policy.data?.retentionPolicy}
+        </p>
+        <div className="row" style={{ gap: 10, paddingTop: 10, width: '100%' }}>
+          <Button variant="secondary" onClick={() => setWithdraw(false)}>
+            취소
+          </Button>
+          <Button variant="danger" disabled={busy} onClick={doWithdraw}>
+            탈퇴하기
+          </Button>
+        </div>
+      </Dialog>
+      {/* 연락처 변경: 새 번호로 인증번호를 받아 확인 */}
+      <Sheet open={phoneSheet} onClose={() => setPhoneSheet(false)}>
+        <div className="stack" style={{ gap: 12, padding: '4px 20px 24px' }}>
+          <h3 className="t-h2">연락처 변경</h3>
+          <TextField label="새 휴대폰 번호" inputMode="numeric" placeholder="01012345678" value={newPhone} onChange={(e) => setNewPhone(e.target.value.replace(/[^0-9]/g, ''))} />
+          <Button variant="secondary" disabled={!/^01[0-9]{8,9}$/.test(newPhone) || busy} onClick={sendCode}>
+            {codeSent ? '인증번호 다시 받기' : '인증번호 받기'}
+          </Button>
+          {codeSent && <TextField label="인증번호 6자리" inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} />}
+          <Button disabled={code.length !== 6 || busy} onClick={changePhone}>
+            변경하기
+          </Button>
+        </div>
+      </Sheet>
+      {toast.node}
     </Screen>
   )
 }
@@ -199,6 +310,26 @@ export function TicketPage() {
               </div>
             )
           })}
+        </section>
+      </Body>
+    </Screen>
+  )
+}
+
+/** 6-1a 참가 이력 전체 */
+export function HistoryPage() {
+  const navigate = useNavigate()
+  const apps = useApi(() => get<ApplicationView[]>('/api/applications'), demoApplications)
+  const history = byLatest(apps.data)
+  return (
+    <Screen>
+      <AppBar title="참가 이력" onBack={() => navigate('/my')} />
+      <Body className="my-body">
+        <p className="t-caption c-sage">전체 {history.length}건, 행사 날짜 최신순</p>
+        <section>
+          {history.map((a) => (
+            <HistoryRow key={a.id} a={a} />
+          ))}
         </section>
       </Body>
     </Screen>

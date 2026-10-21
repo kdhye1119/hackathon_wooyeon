@@ -18,12 +18,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Tag(name = "Admin - Dashboard & Applicants", description = "운영 대시보드·신청자 목록·CSV")
+@Tag(name = "Admin - Dashboard & Applicants", description = "운영 대시보드/신청자 목록/CSV")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
+    private final com.wassup.dinner.user.domain.AdminAccountRepository adminAccountRepository;
     private final AdminQueryService queryService;
     private final AuditService auditService;
 
@@ -33,7 +34,7 @@ public class AdminDashboardController {
         return queryService.dashboard();
     }
 
-    @Operation(summary = "신청자 목록 (프로필·희망 일정·결제·매칭·참석·이전 참석/신고 이력) 필터")
+    @Operation(summary = "신청자 목록 (프로필/희망 일정/결제/매칭/참석/이전 참석/신고 이력) 필터")
     @GetMapping("/applications")
     public List<ApplicantRow> applicants(@RequestParam(required = false) Long slotId,
                                          @RequestParam(required = false) MatchStatus matchStatus,
@@ -42,13 +43,23 @@ public class AdminDashboardController {
         return queryService.applicants(slotId, matchStatus, paymentStatus, q);
     }
 
-    @Operation(summary = "신청 상태 변경 이력 (시간·변경 주체·사유)")
+    public record AdminMe(Long id, String loginId, String name, String role) {
+    }
+
+    @Operation(summary = "로그인한 운영자와 권한 (OWNER 전체 / OPERATOR 정책 변경 제외 / VIEWER 조회만)")
+    @GetMapping("/me")
+    public AdminMe me(com.wassup.dinner.common.auth.LoginUser admin) {
+        var a = adminAccountRepository.findById(admin.userId()).orElseThrow();
+        return new AdminMe(a.getId(), a.getLoginId(), a.getName(), a.effectiveRole().name());
+    }
+
+    @Operation(summary = "신청 상태 변경 이력 (시간/변경 주체/사유)")
     @GetMapping("/applications/{id}/history")
     public List<StatusHistory> history(@PathVariable Long id) {
         return auditService.historyOf("Application", id);
     }
 
-    @Operation(summary = "참가자·테이블 결과 CSV 내보내기 (slotId 생략 시 전체)")
+    @Operation(summary = "참가자/테이블 결과 CSV 내보내기 (slotId 생략 시 전체)")
     @GetMapping(value = "/applications/export.csv")
     public ResponseEntity<byte[]> export(@RequestParam(required = false) Long slotId) {
         List<ApplicantRow> rows = queryService.applicants(slotId, null, null, null);
@@ -61,6 +72,29 @@ public class AdminDashboardController {
                     r.reallocationCount(), r.statusReason(), r.submittedAt())).append('\n');
         }
         String filename = "applications" + (slotId == null ? "" : "-slot" + slotId) + ".csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Operation(summary = "테이블 결과 CSV 내보내기: 테이블 구성원 한 줄씩 (slotId 생략 시 전체)")
+    @GetMapping(value = "/tables/export.csv")
+    public ResponseEntity<byte[]> exportTables(@RequestParam(required = false) Long slotId) {
+        StringBuilder sb = new StringBuilder("﻿");
+        sb.append("테이블ID,테이블,회차,상태,인원,총점,나이차,남,여,식당,예약명,확정시각,신청ID,이름,나이,성별,MBTI,직업,희망회차충족,원하는상대충족,이전만남,재배치횟수,배치사유,참석상태\n");
+        for (var t : queryService.tables(slotId)) {
+            var d = queryService.table(t.tableId());
+            Double total = d.scores() == null ? null : d.scores().get("total");
+            for (var m : d.members()) {
+                sb.append(csv(d.tableId(), d.tableCode(), d.slotLabel(), d.status(), d.memberCount(), total == null ? t.totalScore() : total,
+                        d.ageGap(), d.male(), d.female(), d.venue() == null ? "" : d.venue().name(), d.venue() == null ? "" : d.venue().reservationName(),
+                        d.confirmedAt(), m.applicationId(), m.name(), m.age(), m.gender(), m.mbti(), m.job(),
+                        m.slotSatisfied() ? "Y" : "N", m.desireSatisfied() ? "Y" : "N", String.join(" / ", m.metBeforeWith()),
+                        m.reallocationCount(), m.placementReason(), m.attendanceStatus())).append('\n');
+            }
+        }
+        String filename = "tables" + (slotId == null ? "" : "-slot" + slotId) + ".csv";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))

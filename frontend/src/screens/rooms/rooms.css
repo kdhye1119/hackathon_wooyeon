@@ -98,3 +98,7 @@
 .request-text:focus { border-color: var(--ink); }
 .request-text::placeholder { color: var(--ink); opacity: 0.45; }
 .sys-card .topic-sub { margin-top: 6px; }
+/* 긴 링크(지도 URL 등)가 카드·말풍선 밖으로 나가지 않게 */
+.sys-card { min-width: 0; max-width: 100%; }
+.sys-card p, .bubble { overflow-wrap: anywhere; word-break: break-word; }
+.chat-link { color: inherit; text-decoration: underline; overflow-wrap: anywhere; }

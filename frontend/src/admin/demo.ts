@@ -201,7 +201,7 @@ const tableDetail: TableDetail = {
   minBirthYear: 1994,
   maxBirthYear: 2000,
   ageGap: 6,
-  mbtiSummary: 'E 3 · I 2, N 3 · S 2',
+  mbtiSummary: 'E 3, I 2, N 3, S 2',
   commonInterests: ['전시/공연/아트', '여행', '맛집/카페 탐방'],
   metBeforePairs: 0,
   exclusionConflict: false,

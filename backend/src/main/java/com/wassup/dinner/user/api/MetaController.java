@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Arrays;
 import java.util.List;
 
-@Tag(name = "Meta", description = "신청서 선택지·정책 문구 (로그인 불필요)")
+@Tag(name = "Meta", description = "신청서 선택지/정책 문구 (로그인 불필요)")
 @RestController
 @RequestMapping("/api/meta")
 public class MetaController {
@@ -42,7 +42,7 @@ public class MetaController {
                                   String refundPolicy, String notice) {
     }
 
-    @Operation(summary = "신청서 선택지 목록 (관심사·성향·지역·가격대·이용권 등)")
+    @Operation(summary = "신청서 선택지 목록 (관심사/성향/지역/가격대/이용권 등)")
     @GetMapping("/options")
     public OptionsResponse options() {
         return new OptionsResponse(

@@ -102,7 +102,7 @@ public class DemoService {
         users.add(apply(createUser(random, 2005, Gender.FEMALE), List.of(date), List.of(Region.JAMSIL), true, TicketProduct.SINGLE));
         String guide = """
                 1) POST /api/admin/match-runs {"slotIds":[%d,%d]} 로 즉시 자동 매칭 (또는 /api/admin/demo/clock 으로 매칭 시각까지 이동 후 /tick)
-                2) GET /api/admin/match-runs/{id} 로 분리·재배치·실패 로그 확인
+                2) GET /api/admin/match-runs/{id} 로 분리/재배치/실패 로그 확인
                 3) participants[].token 으로 참가자 화면 확인: GET /api/applications, GET /api/chat/rooms
                 4) /api/admin/demo/clock {"plusDays":2} + /tick → 리마인드, 행사 시각 → 대화 콘텐츠, 종료 후 → 노쇼/피드백 요청
                 """.formatted(slots.get(0).id(), slots.get(1).id());
@@ -202,7 +202,7 @@ public class DemoService {
         }
         String guide = switch (type) {
             case SUCCESS -> "매칭 시각으로 이동하면 6명 테이블이 확정되고 단체방이 열려요.";
-            case FAIL_FEW -> "매칭 시각으로 이동하면 최소 인원 미달로 실패해요. 일정 이동·보관·환불을 고를 수 있어요.";
+            case FAIL_FEW -> "매칭 시각으로 이동하면 최소 인원 미달로 실패해요. 일정 이동/보관/환불을 고를 수 있어요.";
             case FAIL_AGE -> "다른 신청자와 나이 차이가 커서 나만 테이블에 들어가지 못해요.";
             case FAIL_MEMBERSHIP -> "멤버십은 환불 대신 기간이 연장되고, 다음 일정으로 옮기거나 그대로 유지해요.";
             case REALLOCATE -> "1지망 지역 인원이 모자라 2지망 지역 테이블로 자동 재배치돼요.";

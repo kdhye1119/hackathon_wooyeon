@@ -171,7 +171,7 @@ export default function Policy({ edit = false }: { edit?: boolean }) {
                 </span>
                 <Stepper value={draft.maxAgeGap} min={1} max={30} onChange={(v) => setDraft({ ...draft, maxAgeGap: v })} />
                 <span className="t-body-m">살</span>
-                <span className="t-caption muted">자동 매칭·재배치는 이 값을 넘는 조합을 만들지 않아요</span>
+                <span className="t-caption muted">자동 매칭/재배치는 이 값을 넘는 조합을 만들지 않아요</span>
               </div>
               <div className="row" style={{ gap: 8 }}>
                 <span className="t-body-m muted" style={{ width: 120 }}>

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AdminLayout, DataTable, DemoNotice, Field, Panel, useAdminApi } from '../AdminLayout'
 import { Badge, Button, Dialog, useToast } from '../../components/ui'
 import { Icon } from '../../components/Icon'
-import { adminSession, del, get, post, put } from '../../lib/api'
+import { adminSession, api, del, get, post, put } from '../../lib/api'
 import { REGIONS } from '../../lib/options'
 import type { AdminSlot, FeedbackSummary, Venue } from '../types'
 import { adminDemo } from '../demo'
@@ -384,14 +384,31 @@ export function VenueForm() {
   const [days, setDays] = useState<string[]>(m.days ?? ['목'])
   const [memo, setMemo] = useState(m.memo ?? '')
   const [busy, setBusy] = useState(false)
+  // 식당 사진: 저장된 사진(삭제 표시 가능) + 새로 고른 사진. 저장할 때 한 번에 반영
+  const [removed, setRemoved] = useState<string[]>([])
+  const [added, setAdded] = useState<{ file: File; url: string }[]>([])
+  const saved = (editing?.photoUrls ?? []).filter((u) => !removed.includes(u))
+  const pick = (files: FileList | null) => {
+    if (!files) return
+    const imgs = [...files].filter((f) => f.type.startsWith('image/'))
+    const big = imgs.filter((f) => f.size > 5 * 1024 * 1024)
+    if (big.length) toast.show('사진은 한 장에 5MB 까지 올릴 수 있어요')
+    const ok = imgs.filter((f) => f.size <= 5 * 1024 * 1024).slice(0, Math.max(0, 10 - saved.length - added.length))
+    setAdded((prev) => [...prev, ...ok.map((file) => ({ file, url: URL.createObjectURL(file) }))])
+  }
 
   const save = async () => {
     setBusy(true)
     try {
-      const body = { name, region, address, mapUrl: null, phone, priceRange: price, priceGuide: `1인 ${PRICE[price]}`, seatsPerTable: 6, tablesPerSlot: tables, active: true }
+      const body = { name, region, address, mapUrl: editing?.mapUrl ?? null, phone, priceRange: price, priceGuide: `1인 ${PRICE[price]}`, seatsPerTable: 6, tablesPerSlot: tables, active: true }
       if (!venues.demo) {
-        if (editing) await put(`/api/admin/venues/${editing.id}`, body)
-        else await post('/api/admin/venues', body)
+        const v = editing ? await put<Venue>(`/api/admin/venues/${editing.id}`, body) : await post<Venue>('/api/admin/venues', body)
+        for (const u of removed) await del(`/api/admin/venues/${v.id}/photos/${u.split('/').pop()}`)
+        if (added.length) {
+          const fd = new FormData()
+          added.forEach((a) => fd.append('files', a.file))
+          await api(`/api/admin/venues/${v.id}/photos`, { method: 'POST', body: fd })
+        }
       }
       saveMeta(name, { cuisine: cuisine[0], manager, method: method[0], days, memo, deadline })
       toast.show(editing ? '식당 정보를 저장했어요' : `${name}을(를) 등록했어요`)
@@ -466,11 +483,44 @@ export function VenueForm() {
         <Field label="메모">
           <textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="주차, 단체석 위치, 알레르기 대응 등" style={{ minHeight: 80 }} />
         </Field>
-        <label className="adm-dropzone" style={{ cursor: 'pointer' }}>
-          <Icon name="plus" />
-          <span className="t-label-s muted">식당 사진 추가</span>
-          <input type="file" accept="image/*" multiple hidden onChange={(e) => e.target.files?.length && toast.show(`사진 ${e.target.files.length}장을 추가했어요`)} />
-        </label>
+        <div className="adm-field">
+          <span>식당 사진, 첫 사진이 참가자 매칭 확정 화면 대표 사진 (없으면 로고)</span>
+          <div className="adm-photos">
+            {saved.map((u) => (
+              <div key={u} className="adm-photo">
+                <img src={u} alt="" />
+                <button aria-label="사진 삭제" onClick={() => setRemoved((r) => [...r, u])}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </div>
+            ))}
+            {added.map((a) => (
+              <div key={a.url} className="adm-photo new">
+                <img src={a.url} alt="" />
+                <button aria-label="사진 빼기" onClick={() => setAdded((list) => list.filter((x) => x.url !== a.url))}>
+                  <Icon name="trash" size={14} />
+                </button>
+              </div>
+            ))}
+            {saved.length + added.length < 10 && (
+              <label className="adm-dropzone adm-photo-add" style={{ cursor: 'pointer' }}>
+                <Icon name="plus" />
+                <span className="t-label-s muted">사진 추가</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    pick(e.target.files)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            )}
+          </div>
+          <small className="t-caption muted">장당 5MB, 최대 10장. 저장을 눌러야 반영돼요.</small>
+        </div>
         <div className="row" style={{ gap: 10, justifyContent: 'flex-end' }}>
           <Button size="S" variant="secondary" onClick={() => navigate(-1)}>
             취소

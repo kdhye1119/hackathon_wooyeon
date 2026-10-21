@@ -1,3 +1,4 @@
+import { userKey } from './api'
 // 백엔드 Options enum 코드 ↔ 화면 라벨 (Figma 표기)
 export const INTERESTS = [
   ['MOVIE_DRAMA', '영화/드라마'],
@@ -63,7 +64,7 @@ export type ProfileDraft = {
   foodRestrictions: string
 }
 
-const KEY = 'wt.profileDraft'
+const KEY = () => userKey('wt.profileDraft')
 export const emptyDraft: ProfileDraft = {
   name: '',
   birthYear: '',
@@ -80,14 +81,14 @@ export const emptyDraft: ProfileDraft = {
 
 export function loadDraft(): ProfileDraft {
   try {
-    return { ...emptyDraft, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') }
+    return { ...emptyDraft, ...JSON.parse(localStorage.getItem(KEY()) ?? '{}') }
   } catch {
     return { ...emptyDraft }
   }
 }
 export function saveDraft(d: ProfileDraft) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(d))
+    localStorage.setItem(KEY(), JSON.stringify(d))
   } catch {
     /* noop */
   }

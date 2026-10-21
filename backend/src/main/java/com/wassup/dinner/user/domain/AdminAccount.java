@@ -27,10 +27,26 @@ public class AdminAccount {
 
     private LocalDateTime createdAt;
 
+    /** 권한: OWNER 전체 / OPERATOR 매칭 정책 변경 제외 / VIEWER 조회만 */
+    public enum Role { OWNER, OPERATOR, VIEWER }
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private Role role = Role.OWNER;
+
     public AdminAccount(String loginId, String passwordHash, String name, LocalDateTime now) {
         this.loginId = loginId;
         this.passwordHash = passwordHash;
         this.name = name;
         this.createdAt = now;
+    }
+
+    public AdminAccount(String loginId, String passwordHash, String name, Role role, LocalDateTime now) {
+        this(loginId, passwordHash, name, now);
+        this.role = role;
+    }
+
+    public Role effectiveRole() {
+        return role == null ? Role.OWNER : role;
     }
 }

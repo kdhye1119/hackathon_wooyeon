@@ -23,6 +23,8 @@ export type TableInfo = {
   priceGuide: string | null
   curation: string | null
   canCheckIn: boolean
+  /** 운영자가 올린 식당 사진 (없으면 로고) */
+  photoUrls?: string[]
 }
 
 export type ResolutionInfo = {
@@ -35,7 +37,7 @@ export type ResolutionInfo = {
   refundStatus: string | null
 }
 
-export type NextAction = 'PAY' | 'CANCEL' | 'VIEW_ROOM' | 'CHECK_IN' | 'FEEDBACK' | 'CHOOSE_RESOLUTION' | 'REAPPLY' | 'VIEW_NEW_APPLICATION'
+export type NextAction = 'PAY' | 'CANCEL' | 'VIEW_ROOM' | 'CHECK_IN' | 'FEEDBACK' | 'CHOOSE_RESOLUTION' | 'RESPOND_SEAT_OFFER' | 'REAPPLY' | 'VIEW_NEW_APPLICATION'
 
 export type ApplicationView = {
   id: number
@@ -60,6 +62,8 @@ export type ApplicationView = {
   transferredFromId: number | null
   feedbackSubmitted: boolean
   submittedAt: string
+  /** 취소석 제안 (STA-07): 응답 대기 중일 때만 */
+  seatOffer?: { slotLabel: string; tableCode: string; expiresAt: string } | null
 }
 
 export type SlotDto = {

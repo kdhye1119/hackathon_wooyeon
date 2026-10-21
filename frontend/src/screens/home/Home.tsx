@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AppHeader, Body, Button, Screen, TabBar } from '../../components/ui'
+import { AppBar, AppHeader, Body, Button, Footer, Logo, Screen, TabBar } from '../../components/ui'
 import { Icon } from '../../components/Icon'
 import { get, post } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
@@ -42,6 +42,8 @@ export function describe(a: ApplicationView): Row {
   if (a.matchStatus === 'NO_MATCH' && !a.nextActions.includes('CHOOSE_RESOLUTION')) return { sub: a.resolution?.choice === 'KEEP_TICKET' ? '매칭 종료, 이용권 보관' : '매칭 종료', dim: true }
   if (a.paymentStatus === 'FAILED') return { sub: '결제 실패', warn: true, action: { label: '다시 결제', primary: true, to: `/apply/pay?app=${a.id}` } }
   if (a.nextActions.includes('PAY')) return { sub: '결제 대기', warn: true, action: { label: '결제하기', primary: true, to: `/apply/pay?app=${a.id}` } }
+  if (a.nextActions.includes('RESPOND_SEAT_OFFER') && a.seatOffer)
+    return { sub: `자리가 났어요, ${fmt.deadline(a.seatOffer.expiresAt)}까지 응답`, warn: true, action: { label: '응답하기', primary: true, to: `/match/${a.id}/failed` } }
   if (a.nextActions.includes('CHOOSE_RESOLUTION'))
     return { sub: '매칭 실패', warn: true, action: { label: '선택하기', primary: true, to: `/match/${a.id}/failed` } }
   if (a.nextActions.includes('CHECK_IN') || (a.matchStatus === 'CONFIRMED' && a.attendanceStatus === 'SCHEDULED' && isToday(slotDate(a)))) {
@@ -76,9 +78,10 @@ export default function Home() {
     [{ slotId: 5, label: '11/5 (목) 19:30 홍대/합정', region: '홍대/합정', startAt: '2026-11-05T19:30:00', applyDeadline: '2026-11-03T23:59:59', reason: '자주 간 홍대/합정' }],
   )
 
-  // 진행 중인 신청만, 행사가 가까운 순으로. 끝난 내역(취소·환불·매칭 종료·참석·노쇼)은 기록 탭에서 보고, 피드백 대기 건은 배너로
+  // 진행 중인 신청만, 행사가 가까운 순으로. 끝난 내역(취소·환불·매칭 종료·일정 이동·참석·노쇼)은 기록 탭에서 보고, 피드백 대기 건은 배너로
   const finished = (a: ApplicationView) =>
     !!describe(a).dim ||
+    a.matchStatus === 'TRANSFERRED' ||
     ['NO_SHOW', 'CANCELED_EARLY', 'CANCELED_LATE'].includes(a.attendanceStatus ?? '') ||
     (a.attendanceStatus === 'ATTENDED' && !isToday(slotDate(a)))
   const visible = apps.data
@@ -147,7 +150,7 @@ export default function Home() {
           )}
           <div className="list-card" hidden={upcoming.length === 0}>
             {upcoming.map((d, i) => {
-              const rec = recs.data.find((r) => r.startAt.slice(0, 10) === d.date)
+              const rec = (recs.demo && !apps.demo ? [] : recs.data).find((r) => r.startAt.slice(0, 10) === d.date)
               return (
                 <div key={d.date} className="list-row">
                   <DateTile iso={d.date} />
@@ -195,16 +198,43 @@ export default function Home() {
 type ReviewItem = { id: number; comment: string; recommendScore: number; likes: number; liked: boolean }
 
 /** 참가자 후기: 실데이터는 참가자가 공개를 고른 한마디 (이름 없이), 시안은 Figma 예시 */
-function Reviews({ demo }: { demo: boolean }) {
+/** 홈: 추천순 5개 + 자세히 보기 / 전체(full): 추천순·최신순으로 모두 */
+const HOME_REVIEWS = 5
+function Reviews({ demo, guest = false, full = false }: { demo: boolean; guest?: boolean; full?: boolean }) {
+  const navigate = useNavigate()
   const [sort, setSort] = useState<'best' | 'new'>('best')
-  const server = useApi<ReviewItem[] | null>(() => get<ReviewItem[]>(`/api/reviews?sort=${sort === 'best' ? 'recommend' : 'recent'}&limit=10`), null, [sort])
+  const sortParam = sort === 'best' ? 'recommend' : 'recent'
+  // 홈은 하나 더 받아서 '자세히 보기'가 필요한지 판단
+  const limit = full ? 30 : HOME_REVIEWS + 1
+  const server = useApi<ReviewItem[] | null>(() => get<ReviewItem[]>(`/api/reviews?sort=${sortParam}&limit=${limit}`), null, [sort])
+  // 비회원: 실제 공개 후기만 (가데이터 없음)
+  const [publicList, setPublicList] = useState<ReviewItem[] | null>(null)
+  useEffect(() => {
+    if (!guest) return
+    get<ReviewItem[]>(`/api/public/reviews?sort=${sortParam}&limit=${limit}`)
+      .then(setPublicList)
+      .catch(() => setPublicList([]))
+  }, [guest, sortParam, limit])
   const [mine, setMine] = useState<Record<number, { liked: boolean; likes: number }>>({})
-  const list: ReviewItem[] =
-    demo || server.demo || !server.data
+  const all: ReviewItem[] = guest
+    ? (publicList ?? [])
+    : demo || server.demo || !server.data
       ? (sort === 'best' ? demoReviews : [...demoReviews].reverse()).map((r) => ({ id: r.id, comment: r.text, recommendScore: r.nps, likes: r.likes + (r.likedByMe ? 1 : 0), liked: r.likedByMe }))
       : server.data
-  if (!demo && !server.demo && server.data && server.data.length === 0) return null
+  const list = full ? all : all.slice(0, HOME_REVIEWS)
+  const more = !full && all.length > HOME_REVIEWS
+  if (guest && publicList !== null && publicList.length === 0)
+    return (
+      <section className="home-section">
+        <h2 className="t-h2">참가자 후기</h2>
+        <div className="empty-box">
+          <p className="t-body-s muted">아직 공개된 후기가 없어요</p>
+        </div>
+      </section>
+    )
+  if (!guest && !demo && !server.demo && server.data && server.data.length === 0) return null
   const toggle = async (r: ReviewItem) => {
+    if (guest) return navigate('/start')
     const cur = mine[r.id] ?? { liked: r.liked, likes: r.likes }
     // 먼저 화면에 반영하고 서버 결과로 맞춘다
     setMine((m) => ({ ...m, [r.id]: { liked: !cur.liked, likes: cur.likes + (cur.liked ? -1 : 1) } }))
@@ -220,18 +250,27 @@ function Reviews({ demo }: { demo: boolean }) {
     <section className="home-section">
       <div className="row">
         <h2 className="t-h2" style={{ flex: 1 }}>
-          참가자 후기
+          {full ? `후기 ${all.length}개` : '참가자 후기'}
         </h2>
-        <div className="seg" role="tablist">
-          <button role="tab" aria-selected={sort === 'best'} onClick={() => setSort('best')}>
-            추천순
-          </button>
-          <button role="tab" aria-selected={sort === 'new'} onClick={() => setSort('new')}>
-            최신순
-          </button>
-        </div>
+        {full ? (
+          <div className="seg" role="tablist">
+            <button role="tab" aria-selected={sort === 'best'} onClick={() => setSort('best')}>
+              추천순
+            </button>
+            <button role="tab" aria-selected={sort === 'new'} onClick={() => setSort('new')}>
+              최신순
+            </button>
+          </div>
+        ) : (
+          more && (
+            <button className="t-label-m c-sage more-link" onClick={() => navigate(guest ? '/guest/reviews' : '/reviews')}>
+              자세히 보기
+              <Icon name="chevron-right" size={16} />
+            </button>
+          )
+        )}
       </div>
-      <div className="carousel">
+      <div className={full ? 'review-list' : 'carousel'}>
         {list.map((r) => {
           const st = mine[r.id] ?? { liked: r.liked, likes: r.likes }
           return (
@@ -253,5 +292,43 @@ function Reviews({ demo }: { demo: boolean }) {
         })}
       </div>
     </section>
+  )
+}
+
+/** 비회원 둘러보기: 실제 공개 후기만 보여주고, 신청은 로그인 후 */
+export function GuestHome() {
+  const navigate = useNavigate()
+  return (
+    <Screen>
+      <header className="app-header">
+        <span style={{ flex: 1 }}>
+          <Logo />
+        </span>
+      </header>
+      <Body className="home-body">
+        <section className="home-section">
+          <h2 className="t-h2">처음 만나는 사람들과 저녁 한 끼</h2>
+          <p className="t-body-s muted">매주 목요일, 비슷한 사람들끼리 4~6명 테이블로 자동 매칭해 드려요. 참가자들이 직접 남긴 후기를 둘러보세요.</p>
+        </section>
+        <Reviews demo={false} guest />
+      </Body>
+      <Footer>
+        <Button onClick={() => navigate('/start')}>로그인하고 신청하기</Button>
+      </Footer>
+    </Screen>
+  )
+}
+
+/** 참가자 후기 전체: 추천순·최신순 */
+export function ReviewsPage({ guest = false }: { guest?: boolean }) {
+  const navigate = useNavigate()
+  const apps = useApi(() => get<ApplicationView[]>('/api/applications'), demoApplications)
+  return (
+    <Screen>
+      <AppBar title="참가자 후기" onBack={() => navigate(guest ? '/guest' : '/')} />
+      <Body className="home-body">
+        <Reviews demo={!guest && apps.demo} guest={guest} full />
+      </Body>
+    </Screen>
   )
 }

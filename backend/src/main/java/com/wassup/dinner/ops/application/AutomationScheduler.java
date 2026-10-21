@@ -29,6 +29,7 @@ public class AutomationScheduler {
     private final AttendanceService attendanceService;
     private final NotificationService notificationService;
     private final ResolutionService resolutionService;
+    private final com.wassup.dinner.matching.application.TableService tableService;
 
     @Value("${app.automation.enabled:true}")
     private boolean enabled;
@@ -49,6 +50,7 @@ public class AutomationScheduler {
         Integer posts = safe("room-posts", chatService::dispatchDuePosts);
         Integer settled = safe("attendance", attendanceService::settleFinishedEvents);
         safe("auto-keep", resolutionService::autoKeepDue);
+        safe("seat-offers", tableService::expireSeatOffers);
         Integer sent = safe("notifications", notificationService::dispatchDue);
         return new TickResult(runId, nz(posts), nz(settled), nz(sent));
     }

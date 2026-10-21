@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-@Tag(name = "Me - Profile", description = "기본 정보·매칭 프로필·동의")
+@Tag(name = "Me - Profile", description = "기본 정보/매칭 프로필/동의")
 @RestController
 @RequestMapping("/api/me")
 @RequiredArgsConstructor
 public class MeController {
 
+    private final com.wassup.dinner.user.application.AuthService authService;
+    private final com.wassup.dinner.user.application.WithdrawService withdrawService;
     private final ProfileService profileService;
 
     public record ProfileRequest(
@@ -30,12 +32,13 @@ public class MeController {
             @NotBlank @Pattern(regexp = "^[EI][SN][TF][JP]$", message = "MBTI 4글자 (예: ENFP)") String mbti,
             @NotEmpty Set<Interest> interests,
             @NotEmpty Set<Trait> traits,
-            @NotEmpty Set<DesiredType> desiredTypes,
-            @NotEmpty Set<PriceRange> priceRanges,
+            /* 매칭 선호는 비워도 된다 (신청서에서 고르지 않으면 null/빈 값) */
+            Set<DesiredType> desiredTypes,
+            Set<PriceRange> priceRanges,
             String foodRestrictions) {
     }
 
-    public record ConsentRequest(@AssertTrue(message = "개인정보 수집·이용 및 오픈 단톡방 동의가 필요합니다.") boolean privacy,
+    public record ConsentRequest(@AssertTrue(message = "개인정보 수집/이용 및 오픈 단톡방 동의가 필요합니다.") boolean privacy,
                                  @AssertTrue(message = "주의 사항 확인이 필요합니다.") boolean policy) {
     }
 
@@ -58,9 +61,36 @@ public class MeController {
         return profileService.update(user.userId(), request);
     }
 
-    @Operation(summary = "개인정보 수집·이용(오픈 단톡방 포함) 및 주의 사항 동의")
+    @Operation(summary = "개인정보 수집/이용(오픈 단톡방 포함) 및 주의 사항 동의")
     @PostMapping("/consents")
     public ProfileResponse consent(LoginUser user, @Valid @RequestBody ConsentRequest request) {
         return profileService.consent(user.userId());
+    }
+
+    public record WithdrawInfo(String retentionPolicy) {
+    }
+
+    @Operation(summary = "탈퇴 안내 (보관 정책)")
+    @GetMapping("/withdraw")
+    public WithdrawInfo withdrawInfo() {
+        return new WithdrawInfo(com.wassup.dinner.user.application.WithdrawService.RETENTION_POLICY);
+    }
+
+    @Operation(summary = "회원 탈퇴: 진행 중 신청 취소(환불 규정) + 식별 정보 삭제")
+    @PostMapping("/withdraw")
+    public void withdraw(LoginUser user) {
+        withdrawService.withdraw(user.userId());
+    }
+
+    public record PhoneChangeRequest(
+            @NotBlank @Pattern(regexp = "^01[0-9]{8,9}$", message = "숫자만 입력 (예: 01012345678)") String phone,
+            @NotBlank @Pattern(regexp = "^[0-9]{6}$", message = "인증번호 6자리") String code) {
+    }
+
+    @Operation(summary = "연락처 변경 (새 번호로 받은 인증번호 확인, 인증번호 요청은 POST /api/auth/otp purpose=CHANGE_PHONE)")
+    @PostMapping("/phone")
+    public ProfileResponse changePhone(LoginUser user, @Valid @RequestBody PhoneChangeRequest request) {
+        authService.changePhone(user.userId(), request.phone(), request.code());
+        return profileService.get(user.userId());
     }
 }

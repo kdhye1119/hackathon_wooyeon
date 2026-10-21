@@ -17,7 +17,7 @@ public class SlotController {
 
     private final SlotService slotService;
 
-    @Operation(summary = "모집 중인 날짜·지역·회차 목록과 신청 마감·매칭 발표 시각")
+    @Operation(summary = "모집 중인 날짜/지역/회차 목록과 신청 마감/매칭 발표 시각")
     @GetMapping
     public OpenSlotsResponse open() {
         return slotService.openSlots();

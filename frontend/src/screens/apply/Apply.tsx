@@ -4,7 +4,7 @@ import { AppBar, Badge, Body, Button, Chip, Dialog, Footer, Screen, Sheet, TextF
 import { Icon } from '../../components/Icon'
 import { get, post, put, session } from '../../lib/api'
 import { fmt, useApi } from '../../lib/useApi'
-import { ALLERGIES, CUISINES, DESIRED_TYPES, PRICE_RANGES, labelOf, loadDraft, toggle } from '../../lib/options'
+import { ALLERGIES, CUISINES, DESIRED_TYPES, PRICE_RANGES, labelOf, toggle } from '../../lib/options'
 import type { ApplicationView, OpenSlotsResponse, SubmitResponse, TicketDto, TicketOption } from '../../lib/types'
 import { demoApplications, demoSlots, demoTickets } from '../../lib/demo'
 import { demoApplyDefaults, initialApply, hasPrevious, loadApply, loadLast, rememberLast, saveApply, type ApplyState } from './applyState'
@@ -72,16 +72,8 @@ export function ApplyPreference() {
       // 시안(3-2)은 재신청 사용자라 지난 신청 내용을 불러온 상태
       if (s.desiredTypes.length === 0) set(demoApplyDefaults)
       setLoaded(true)
-    } else {
-      get<{ desiredTypes: string[]; priceRanges: string[]; profileComplete: boolean }>('/api/me/profile')
-        .then((p) => {
-          if (p.profileComplete && p.desiredTypes.length) {
-            set({ desiredTypes: p.desiredTypes, priceRanges: p.priceRanges })
-            setLoaded(true)
-          }
-        })
-        .catch(() => undefined)
     }
+    // 처음 신청하는 계정은 아무것도 고르지 않은 상태로 시작
     // 홈에서 날짜를 골라 들어온 경우 미리 선택
     const d = params.get('date')
     if (d) set({ dates: [d] })
@@ -92,7 +84,8 @@ export function ApplyPreference() {
     if (v === '없음') return set({ allergies: s.allergies.includes('없음') ? [] : ['없음'] })
     set({ allergies: toggle(s.allergies.filter((a) => a !== '없음'), v) })
   }
-  const valid = s.desiredTypes.length > 0 && s.priceRanges.length > 0 && s.agreePrivacy && s.agreePolicy
+  // 매칭 선호는 비워도 되고, 필수 동의만 확인한다
+  const valid = s.agreePrivacy && s.agreePolicy
 
   return (
     <Screen>
@@ -136,7 +129,7 @@ export function ApplyPreference() {
               </Chip>
             ))}
           </div>
-          <p className="t-label-s muted">알레르기 (식당에 미리 전달해요)</p>
+          <p className="t-label-s muted">알레르기</p>
           <div className="chips">
             {ALLERGIES.map((c) => (
               <Chip key={c} selected={s.allergies.includes(c)} onClick={() => toggleAllergy(c)}>
@@ -144,7 +137,7 @@ export function ApplyPreference() {
               </Chip>
             ))}
           </div>
-          <TextField className="field-form" label="못 먹는 음식 (선택)" placeholder="예: 날것, 고수" value={s.avoidFood} onChange={(e) => set({ avoidFood: e.target.value })} />
+          <TextField className="field-form" label="못 먹는 음식" placeholder="예: 날것, 고수" value={s.avoidFood} onChange={(e) => set({ avoidFood: e.target.value })} />
         </section>
         <div className="agree-box">
           <CheckBox checked={s.agreePrivacy} onChange={() => set({ agreePrivacy: !s.agreePrivacy })}>
@@ -177,9 +170,9 @@ export function ApplySchedule() {
   const [sheet, setSheet] = useState(false)
   const toast = useToast()
 
-  // 처음 들어오면 Figma 기본 선택(홍대/합정, 을지로/종로)
+  // 실제 계정은 아무것도 고르지 않은 상태로 시작 (시안 세션만 Figma 예시 선택: 홍대/합정, 을지로/종로)
   useEffect(() => {
-    if (s.regions.length === 0) set({ regions: ['HONGDAE_HAPJEONG', 'EULJIRO_JONGNO'] })
+    if ((!session.token || session.token === 'demo') && s.regions.length === 0) set({ regions: ['HONGDAE_HAPJEONG', 'EULJIRO_JONGNO'] })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -364,12 +357,7 @@ export function ApplyPayment() {
     ...held.data.map((t) => ({ code: `HELD:${t.id}`, label: `보유 ${t.productLabel.split(' (')[0]}`, price: 0, count: t.remainingCount, validDays: 0, sub: `${t.totalCount === 0 ? '무제한' : `${t.remainingCount}회 남음`}, ${t.expiresAt.slice(0, 10).replace(/-/g, '.')}까지`, tag: '결제 없음' })),
     ...products,
   ]
-  const selected = tickets.find((t) => t.code === s.product) ?? tickets[0]
-  useEffect(() => {
-    // 보유 이용권이 있으면 기본 선택
-    if (held.data.length && !s.product.startsWith('HELD:')) set({ product: `HELD:${held.data[0].id}` })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [held.data])
+  const selected = tickets.find((t) => t.code === s.product)
   const regionLabel = (c: string) => slots.data.regions.find((r) => r.code === c)?.label ?? c
   // 일정을 고르지 않고 결제 화면에 바로 들어오면 일정 선택으로 돌려보낸다 (시안 세션 제외)
   useEffect(() => {
@@ -398,16 +386,17 @@ export function ApplyPayment() {
         if (retry.data?.payment) {
           await post(`/api/payments/${retry.data.payment.paymentId}/confirm`, { simulateFailure: false })
         } else {
-          const d = loadDraft()
+          // 서버에 저장된 프로필은 그대로 두고, 이번 신청에서 고른 선호만 반영
+          const p = await get<Record<string, unknown>>('/api/me/profile')
           await put('/api/me/profile', {
-            name: d.name || session.user?.name || '참가자',
-            birthYear: Number(d.birthYear) || 1999,
-            gender: d.gender || 'FEMALE',
-            job: d.job || '미입력',
-            instagramId: d.instagramId || '미입력',
-            mbti: d.mbti || 'ENFP',
-            interests: d.interests.length ? d.interests : ['FOOD_CAFE'],
-            traits: d.traits.length ? d.traits : ['DEEP_TALK'],
+            name: p.name,
+            birthYear: p.birthYear,
+            gender: p.gender,
+            job: p.job,
+            instagramId: p.instagramId,
+            mbti: p.mbti,
+            interests: p.interests,
+            traits: p.traits,
             desiredTypes: s.desiredTypes,
             priceRanges: s.priceRanges,
             foodRestrictions: [s.cuisines.length ? `선호: ${s.cuisines.join(', ')}` : '', s.allergies.filter((a) => a !== '없음').length ? `알레르기: ${s.allergies.join(', ')}` : '']
@@ -420,7 +409,7 @@ export function ApplyPayment() {
             dates: s.dates,
             regions: s.regions,
             otherRegion: s.otherRegion || null,
-            product: heldTicket ? null : selected.code,
+            product: heldTicket ? null : selected!.code,
             ticketId: heldTicket?.id ?? null,
           })
           appId = res.application.id
@@ -458,7 +447,7 @@ export function ApplyPayment() {
           </div>
           <p className="t-h3">{summaryDates} {startLabel}</p>
           <p className="t-body-s c-sage">
-            {regions.map(regionLabel).join(', ')}, 1인 {s.priceRanges.map((p) => labelOf(PRICE_RANGES, p)).join(', ')} 식당
+            {[regions.map(regionLabel).join(', '), s.priceRanges.length ? `1인 ${s.priceRanges.map((p) => labelOf(PRICE_RANGES, p)).join(', ')} 식당` : ''].filter(Boolean).join(', ')}
           </p>
         </div>
 
@@ -522,8 +511,11 @@ export function ApplyPayment() {
           </span>
           <span className="t-h2 c-terracotta">{fmt.won(amount)}</span>
         </div>
-        <Button disabled={!s.policyChecked || busy || (!retryId && s.dates.length === 0)} onClick={pay}>
-          {busy ? '처리 중…' : amount === 0 && !retryId ? '이용권으로 신청하기' : '결제하기'}
+        <Button
+          disabled={!s.policyChecked || busy || (!retryId && (s.dates.length === 0 || !selected)) || (amount > 0 && !s.method)}
+          onClick={pay}
+        >
+          {busy ? '처리 중…' : !retryId && !selected ? '이용권을 골라 주세요' : amount > 0 && !s.method ? '결제 수단을 골라 주세요' : amount === 0 && !retryId ? '이용권으로 신청하기' : '결제하기'}
         </Button>
       </div>
       {toast.node}

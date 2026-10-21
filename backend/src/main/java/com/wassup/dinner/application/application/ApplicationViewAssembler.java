@@ -35,12 +35,14 @@ public class ApplicationViewAssembler {
     private final DiningTableRepository tableRepository;
     private final ChatRoomRepository roomRepository;
     private final VenueRepository venueRepository;
+    private final com.wassup.dinner.venue.application.VenuePhotoService photoService;
     private final PaymentRepository paymentRepository;
     private final RefundRepository refundRepository;
     private final MatchResolutionRepository resolutionRepository;
     private final FeedbackRepository feedbackRepository;
     private final AuditService auditService;
     private final AppClock clock;
+    private final com.wassup.dinner.matching.domain.SeatOfferRepository seatOfferRepository;
 
     public ApplicationView toView(Application a, boolean withTimeline) {
         LocalDateTime now = clock.now();
@@ -76,7 +78,7 @@ public class ApplicationViewAssembler {
                 table = new TableInfo(t.getId(), t.getTableCode(), roomId, assigned.label(), assigned.startAt(),
                         t.getMemberCount(), v == null ? null : v.getName(), v == null ? null : v.getAddress(),
                         v == null ? null : v.getMapUrl(), t.getReservationName(), v == null ? null : v.getPriceGuide(),
-                        t.getCuration(), canCheckIn);
+                        t.getCuration(), canCheckIn, photoService.urls(v == null ? null : v.getId()));
             }
         }
 
@@ -91,7 +93,15 @@ public class ApplicationViewAssembler {
 
         boolean feedbackSubmitted = feedbackRepository.existsByApplicationId(a.getId());
         String[] text = statusText(a, announce, table, feedbackSubmitted);
-        List<String> actions = actions(a, now, assigned, table, feedbackSubmitted, resolution);
+        List<String> actions = new java.util.ArrayList<>(actions(a, now, assigned, table, feedbackSubmitted, resolution));
+        ApplicationView.SeatOfferInfo seatOffer = seatOfferRepository
+                .findFirstByApplicationIdAndStatus(a.getId(), com.wassup.dinner.matching.domain.SeatOffer.Status.PENDING)
+                .filter(o -> now.isBefore(o.getExpiresAt()))
+                .map(o -> new ApplicationView.SeatOfferInfo(
+                        slotRepository.findById(o.getSlotId()).map(EventSlot::label).orElse(""),
+                        tableRepository.findById(o.getTableId()).map(DiningTable::getTableCode).orElse(""), o.getExpiresAt()))
+                .orElse(null);
+        if (seatOffer != null) actions.add(0, "RESPOND_SEAT_OFFER");
         List<TimelineItem> timeline = withTimeline
                 ? auditService.historyOf(ApplicationStates.ENTITY, a.getId()).stream().map(TimelineItem::of).toList()
                 : List.of();
@@ -100,7 +110,7 @@ public class ApplicationViewAssembler {
                 a.getAttendanceStatus() == null ? null : a.getAttendanceStatus().name(), text[0], text[1], actions,
                 slotItems, a.getOtherRegion(), payment, announce, refundDeadline, cancelWillRefund,
                 a.getReallocationCount(), a.getStatusReason(), table, resolution, a.getTransferredToId(),
-                a.getTransferredFromId(), feedbackSubmitted, a.getSubmittedAt(), timeline);
+                a.getTransferredFromId(), feedbackSubmitted, a.getSubmittedAt(), timeline, seatOffer);
     }
 
     private String[] statusText(Application a, LocalDateTime announce, TableInfo table, boolean feedbackSubmitted) {
@@ -118,7 +128,7 @@ public class ApplicationViewAssembler {
             case REALLOCATING -> new String[]{"재배치 중", "조건에 맞는 다른 테이블을 찾고 있어요."};
             case CONFIRMED -> confirmedText(a, table, feedbackSubmitted);
             case ALTERNATIVE_OFFERED -> new String[]{"다른 일정을 골라주세요",
-                    a.getStatusReason() + " 추천 일정으로 이동하거나, 이용권 보관·환불을 선택할 수 있어요."};
+                    a.getStatusReason() + " 추천 일정으로 이동하거나, 이용권 보관/환불을 선택할 수 있어요."};
             case TRANSFERRED -> new String[]{"일정 이동 완료", "새 회차 신청으로 이동했어요. 기존 결제는 그대로 유지돼요."};
             case NO_MATCH -> new String[]{"매칭 종료", noMatchText(a)};
             case EXCEPTION -> new String[]{"확인 중", "운영팀이 신청 내용을 확인하고 있어요. 곧 안내드릴게요."};
@@ -134,7 +144,7 @@ public class ApplicationViewAssembler {
             return new String[]{"노쇼", "체크인 기록이 없어 노쇼로 처리되었어요. 이후 참여가 제한될 수 있어요."};
         }
         String venue = table == null || table.venueName() == null ? "식당 배정 중" : table.venueName();
-        return new String[]{"테이블 확정", (table == null ? "" : table.slotLabel() + " · ") + venue + ". 단체방에서 안내를 확인해 주세요."};
+        return new String[]{"테이블 확정", (table == null ? "" : table.slotLabel() + ", ") + venue + ". 단체방에서 안내를 확인해 주세요."};
     }
 
     private static String noMatchText(Application a) {
@@ -184,6 +194,11 @@ public class ApplicationViewAssembler {
     }
 
     private static String fmt(LocalDateTime t) {
-        return t == null ? "매칭 예정 시각" : FMT.format(t);
+        if (t == null) {
+            return "매칭 예정 시각";
+        }
+        // 자정은 앱 표기와 같이 전날 24:00
+        return t.toLocalTime().equals(java.time.LocalTime.MIDNIGHT)
+                ? DateTimeFormatter.ofPattern("M월 d일").format(t.minusDays(1)) + " 24:00" : FMT.format(t);
     }
 }

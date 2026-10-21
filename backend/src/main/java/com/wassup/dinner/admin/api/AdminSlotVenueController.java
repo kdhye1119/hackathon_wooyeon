@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Admin - Slots & Venues", description = "회차 생성·관리, 식당 재고 관리")
+@Tag(name = "Admin - Slots & Venues", description = "회차 생성/관리, 식당 재고 관리")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -35,6 +35,7 @@ public class AdminSlotVenueController {
     private final EventSlotRepository slotRepository;
     private final RetentionService retentionService;
     private final VenueRepository venueRepository;
+    private final com.wassup.dinner.venue.application.VenuePhotoService photoService;
     private final VenueBookingRepository bookingRepository;
     private final AppClock clock;
 
@@ -45,11 +46,11 @@ public class AdminSlotVenueController {
 
     public record VenueDto(Long id, String name, String region, String regionLabel, String address, String mapUrl,
                            String phone, String priceRange, String priceGuide, int seatsPerTable, int tablesPerSlot,
-                           boolean active) {
-        static VenueDto of(Venue v) {
+                           boolean active, List<String> photoUrls) {
+        static VenueDto of(Venue v, List<String> photoUrls) {
             return new VenueDto(v.getId(), v.getName(), v.getRegion().name(), v.getRegion().getLabel(), v.getAddress(),
                     v.getMapUrl(), v.getPhone(), v.getPriceRange().name(), v.getPriceGuide(), v.getSeatsPerTable(),
-                    v.getTablesPerSlot(), v.isActive());
+                    v.getTablesPerSlot(), v.isActive(), photoUrls == null ? List.of() : photoUrls);
         }
     }
 
@@ -64,7 +65,7 @@ public class AdminSlotVenueController {
         return slotService.all();
     }
 
-    @Operation(summary = "회차 생성 (마감·매칭 시각 생략 시 행사 2일 전 10:00 / 12:00). 이전 참석자에게 추천 알림")
+    @Operation(summary = "회차 생성 (마감/매칭 시각 생략 시 행사 2일 전 10:00 / 12:00). 이전 참석자에게 추천 알림")
     @PostMapping("/slots")
     public SlotDto create(@RequestBody SlotRequest request) {
         SlotDto dto = slotService.create(request);
@@ -80,7 +81,7 @@ public class AdminSlotVenueController {
         return created;
     }
 
-    @Operation(summary = "회차 수정 (정원·시간·신청 마감·자동 매칭 실행 시각)")
+    @Operation(summary = "회차 수정 (정원/시간/신청 마감/자동 매칭 실행 시각)")
     @PutMapping("/slots/{id}")
     public SlotDto update(@PathVariable Long id, @RequestBody SlotRequest request) {
         return slotService.update(id, request);
@@ -91,7 +92,9 @@ public class AdminSlotVenueController {
     @Operation(summary = "식당 목록")
     @GetMapping("/venues")
     public List<VenueDto> venues() {
-        return venueRepository.findAll().stream().map(VenueDto::of).toList();
+        List<Venue> all = venueRepository.findAll();
+        var photos = photoService.urls(all.stream().map(Venue::getId).toList());
+        return all.stream().map(v -> VenueDto.of(v, photos.get(v.getId()))).toList();
     }
 
     @Operation(summary = "식당 등록")
@@ -101,10 +104,10 @@ public class AdminSlotVenueController {
         Venue v = new Venue(r.name(), r.region(), r.address(), r.mapUrl(), r.priceRange(), r.priceGuide(),
                 r.tablesPerSlot() == null ? 2 : r.tablesPerSlot(), clock.now());
         apply(v, r);
-        return VenueDto.of(venueRepository.save(v));
+        return VenueDto.of(venueRepository.save(v), List.of());
     }
 
-    @Operation(summary = "식당 수정 (회차당 수용 테이블 수·활성 여부 등)")
+    @Operation(summary = "식당 수정 (회차당 수용 테이블 수/활성 여부 등)")
     @PutMapping("/venues/{id}")
     @Transactional
     public VenueDto updateVenue(@PathVariable Long id, @Valid @RequestBody VenueRequest r) {
@@ -117,7 +120,20 @@ public class AdminSlotVenueController {
         v.setPriceGuide(r.priceGuide());
         if (r.tablesPerSlot() != null) v.setTablesPerSlot(r.tablesPerSlot());
         apply(v, r);
-        return VenueDto.of(v);
+        return VenueDto.of(v, photoService.urls(v.getId()));
+    }
+
+    @Operation(summary = "식당 사진 올리기 (여러 장, 장당 5MB, 최대 10장). 첫 사진이 참가자 화면 대표 사진")
+    @PostMapping(value = "/venues/{id}/photos", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public List<String> uploadPhotos(@PathVariable Long id, @RequestParam("files") List<org.springframework.web.multipart.MultipartFile> files) {
+        return photoService.upload(id, files);
+    }
+
+    @Operation(summary = "식당 사진 삭제")
+    @DeleteMapping("/venues/{id}/photos/{photoId}")
+    public List<String> deletePhoto(@PathVariable Long id, @PathVariable Long photoId) {
+        photoService.delete(id, photoId);
+        return photoService.urls(id);
     }
 
     @Operation(summary = "회차별 식당 예약 현황 (재고)")

@@ -9,4 +9,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<ChatMessage> findByRoomIdAndIdGreaterThanOrderByIdAsc(Long roomId, Long afterId);
 
     long countByRoomId(Long roomId);
+
+    List<ChatMessage> findByTypeInOrderByIdDesc(java.util.Collection<ChatMessage.Type> types);
 }

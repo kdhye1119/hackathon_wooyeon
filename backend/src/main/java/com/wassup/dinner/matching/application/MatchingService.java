@@ -105,7 +105,7 @@ public class MatchingService {
             if (u == null || !u.isProfileComplete()) {
                 states.match(a, MatchStatus.EXCEPTION, "프로필 필수 정보 누락", "SYSTEM");
                 exceptionCaseService.open(ExceptionType.DATA_MISSING, "app:" + a.getId(),
-                        "신청#" + a.getId() + " 프로필 필수 항목(출생연도·성별·MBTI 등)이 누락되어 매칭할 수 없습니다.",
+                        "신청#" + a.getId() + " 프로필 필수 항목(출생연도/성별/MBTI 등)이 누락되어 매칭할 수 없습니다.",
                         ExceptionCaseService.Refs.application(a.getId(), a.getUserId()));
                 excluded++;
                 continue;

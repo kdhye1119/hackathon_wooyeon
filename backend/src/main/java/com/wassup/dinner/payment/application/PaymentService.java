@@ -26,6 +26,24 @@ import java.util.List;
 public class PaymentService {
 
     public static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("M/d HH:mm");
+    private static final DateTimeFormatter MD = DateTimeFormatter.ofPattern("M/d");
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+
+    /** 마감·매칭 시각 표기: 자정(00:00)은 앱과 같이 전날 24:00 으로 */
+    public static String at(java.time.LocalDateTime t) {
+        if (t == null) {
+            return "-";
+        }
+        if (t.toLocalTime().equals(java.time.LocalTime.MIDNIGHT)) {
+            return MD.format(t.minusDays(1)) + " 24:00";
+        }
+        return FMT.format(t);
+    }
+
+    /** 유효기간 표기: 날짜만 */
+    public static String date(java.time.LocalDateTime t) {
+        return t == null ? "-" : DATE.format(t);
+    }
 
     private final PaymentRepository paymentRepository;
     private final TicketRepository ticketRepository;
@@ -120,6 +138,6 @@ public class PaymentService {
     /** 신청의 가장 이른 자동 매칭 예정 시각 */
     public String matchAt(Application a) {
         return a.getSlotIds().stream().map(slotRepository::findById).flatMap(java.util.Optional::stream)
-                .map(EventSlot::getMatchAt).min(Comparator.naturalOrder()).map(FMT::format).orElse("-");
+                .map(EventSlot::getMatchAt).min(Comparator.naturalOrder()).map(PaymentService::at).orElse("-");
     }
 }

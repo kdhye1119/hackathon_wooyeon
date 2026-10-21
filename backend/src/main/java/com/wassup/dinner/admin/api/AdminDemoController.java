@@ -18,7 +18,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Tag(name = "Admin - Demo", description = "해커톤 시연 도구: 시간 이동·자동화 즉시 실행·테스트 참가자·장애 시뮬레이션")
+@Tag(name = "Admin - Demo", description = "해커톤 시연 도구: 시간 이동/자동화 즉시 실행/테스트 참가자/장애 시뮬레이션")
 @RestController
 @RequestMapping("/api/admin/demo")
 @RequiredArgsConstructor
@@ -75,7 +75,7 @@ public class AdminDemoController {
         return demoService.seed(request);
     }
 
-    @Operation(summary = "시연 시나리오 일괄 생성 (분리·재배치·매칭 실패가 모두 나오도록 구성)")
+    @Operation(summary = "시연 시나리오 일괄 생성 (분리/재배치/매칭 실패가 모두 나오도록 구성)")
     @PostMapping("/scenario")
     public ScenarioResponse scenario(@RequestParam(defaultValue = "42") long seed) {
         return demoService.scenario(seed);
@@ -84,7 +84,7 @@ public class AdminDemoController {
     public record UserScenarioRequest(Long userId, DemoService.UserScenario type) {
     }
 
-    @Operation(summary = "참가자 본인 기준 시나리오 (매칭 성공·인원 부족 실패·나이 차이 실패·멤버십 실패·자동 재배치·결제 대기)")
+    @Operation(summary = "참가자 본인 기준 시나리오 (매칭 성공/인원 부족 실패/나이 차이 실패/멤버십 실패/자동 재배치/결제 대기)")
     @PostMapping("/user-scenario")
     public DemoService.UserScenarioResponse userScenario(@RequestBody UserScenarioRequest r) {
         return demoService.userScenario(r.userId(), r.type());

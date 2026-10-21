@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "Participation", description = "체크인·피드백·신고/차단·참가 이력·다음 일정 추천")
+@Tag(name = "Participation", description = "체크인/피드백/신고/차단/참가 이력/다음 일정 추천")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -44,7 +44,7 @@ public class ParticipationController {
         return feedbackService.tablemates(user.userId(), id);
     }
 
-    @Operation(summary = "만족도·재참여 의향·사람별 선호(비공개) 제출")
+    @Operation(summary = "만족도/재참여 의향/사람별 선호(비공개) 제출")
     @PostMapping("/applications/{id}/feedback")
     public void feedback(LoginUser user, @PathVariable Long id, @Valid @RequestBody FeedbackRequest request) {
         feedbackService.submit(user.userId(), id, request);
@@ -62,13 +62,13 @@ public class ParticipationController {
         safetyService.block(user.userId(), targetUserId);
     }
 
-    @Operation(summary = "참가 이력 (날짜·지역·피드백 제출 여부)")
+    @Operation(summary = "참가 이력 (날짜/지역/피드백 제출 여부)")
     @GetMapping("/me/history")
     public List<HistoryItem> history(LoginUser user) {
         return retentionService.history(user.userId());
     }
 
-    @Operation(summary = "공개 후기 (sort=recommend 좋아요·추천순 / recent 최신순)")
+    @Operation(summary = "공개 후기 (sort=recommend 좋아요/추천순 / recent 최신순)")
     @GetMapping("/reviews")
     public List<ReviewService.ReviewDto> reviews(LoginUser user, @RequestParam(defaultValue = "recommend") String sort,
                                                  @RequestParam(defaultValue = "10") int limit) {

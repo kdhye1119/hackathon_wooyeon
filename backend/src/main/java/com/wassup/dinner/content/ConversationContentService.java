@@ -12,6 +12,8 @@ public class ConversationContentService {
 
     public static final String GENERAL = "GENERAL";
     public static final String ICEBREAKER = "ICEBREAKER";
+    /** 테이블 유형(구성원 다수 성향)별 주제: TRAIT_DEEP_TALK 등 */
+    public static final String TRAIT_PREFIX = "TRAIT_";
 
     private final TopicItemRepository topicRepository;
 
@@ -23,7 +25,7 @@ public class ConversationContentService {
             "FOOD_CAFE", List.of("나만 알고 싶은 단골 맛집이나 카페는?", "오늘 이 식당에서 꼭 먹어봐야 할 메뉴를 골라본다면?"),
             "TRAVEL", List.of("다시 가고 싶은 여행지와 그곳에서의 한 장면은?", "여행 스타일: 계획파 vs 즉흥파?"),
             "PHOTO_VIDEO", List.of("휴대폰 사진첩에서 가장 아끼는 사진 한 장 이야기", "요즘 찍고 싶은 장면이나 장소는?"),
-            "EXHIBITION_ART", List.of("최근 본 전시·공연 중 마음에 남은 작품은?", "직접 배워보고 싶은 예술 분야가 있다면?"),
+            "EXHIBITION_ART", List.of("최근 본 전시/공연 중 마음에 남은 작품은?", "직접 배워보고 싶은 예술 분야가 있다면?"),
             "FASHION_BEAUTY", List.of("요즘 꽂힌 스타일이나 아이템은?", "나를 가장 잘 표현하는 컬러는?"),
             "SELF_DEVELOPMENT", List.of("요즘 배우고 있는 것, 혹은 배우고 싶은 것은?", "올해 안에 꼭 이루고 싶은 작은 목표 하나는?"));
 
@@ -67,6 +69,17 @@ public class ConversationContentService {
                 break;
             }
         }
+        // 테이블 유형별 노출 규칙: 구성원 성향 중 가장 많은 성향(동률이면 둘)의 운영자 등록 주제
+        Map<String, Long> traitCount = new HashMap<>();
+        traits.forEach(t -> traitCount.merge(t, 1L, Long::sum));
+        long top = traitCount.values().stream().mapToLong(Long::longValue).max().orElse(0);
+        traitCount.entrySet().stream().filter(e -> top > 0 && e.getValue() == top).map(Map.Entry::getKey).sorted().limit(2)
+                .forEach(t -> {
+                    List<String> typed = custom.getOrDefault(TRAIT_PREFIX + t, List.of());
+                    if (!typed.isEmpty()) {
+                        topics.add(typed.get(random.nextInt(typed.size())));
+                    }
+                });
         // 모든 테이블 공통 주제 (운영자 등록) 1개
         List<String> general = custom.getOrDefault(GENERAL, List.of());
         if (!general.isEmpty()) {
@@ -102,6 +115,9 @@ public class ConversationContentService {
         TOPICS_BY_INTEREST.forEach((k, v) -> out.put(k, v.size()));
         out.put(GENERAL, DEEP_TOPICS.size() + LIGHT_TOPICS.size());
         out.put(ICEBREAKER, ICEBREAKERS.size());
+        for (var t : com.wassup.dinner.user.domain.Options.Trait.values()) {
+            out.put(TRAIT_PREFIX + t.name(), 0);
+        }
         return out;
     }
 }

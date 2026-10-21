@@ -328,7 +328,7 @@ export default function Feedback() {
             매칭 제외 관계
           </h2>
           <span className="t-body-s muted">
-            {kpi.pairs}쌍, 다음 매칭에 자동 반영{!demo && kpi.pairs > xrows.length ? ` (비선호·차단 ${kpi.pairs - xrows.length}쌍은 당사자 보호로 목록에 보이지 않아요)` : ''}
+            {kpi.pairs}쌍, 다음 매칭에 자동 반영{!demo && kpi.pairs > xrows.length ? ` (비선호/차단 ${kpi.pairs - xrows.length}쌍은 당사자 보호로 목록에 보이지 않아요)` : ''}
           </span>
         </div>
         <DataTable

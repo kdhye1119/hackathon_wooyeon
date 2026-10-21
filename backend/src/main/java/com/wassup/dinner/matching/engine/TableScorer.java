@@ -24,13 +24,13 @@ public class TableScorer {
         }
         for (Candidate c : members) {
             if (!c.slotOptions().contains(slotId)) {
-                return "희망 날짜·지역 불일치";
+                return "희망 날짜/지역 불일치";
             }
         }
         for (int i = 0; i < members.size(); i++) {
             for (int j = i + 1; j < members.size(); j++) {
                 if (ctx.excluded(members.get(i).userId(), members.get(j).userId())) {
-                    return "차단·신고·비선호 관계 포함";
+                    return "차단/신고/비선호 관계 포함";
                 }
             }
         }

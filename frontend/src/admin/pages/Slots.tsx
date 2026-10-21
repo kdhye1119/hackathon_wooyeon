@@ -182,7 +182,7 @@ export default function Slots() {
           <div className="adm-preview">
             <b className="t-label-m">회차 {plan.length}개 생성</b>
             <span className="t-body-s muted">
-              {plan.length ? `${plan.map(md).join(', ')} (${days.join('·') || DAY[plan[0].getDay()]}) ${time}` : '날짜를 골라주세요'}
+              {plan.length ? `${plan.map(md).join(', ')} (${days.join('/') || DAY[plan[0].getDay()]}) ${time}` : '날짜를 골라주세요'}
             </span>
           </div>
           <div className="adm-field" style={{ gap: 8 }}>

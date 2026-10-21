@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Admin - Operations", description = "예외 처리함·결제/환불·참석/노쇼·피드백/신고·자동 메시지")
+@Tag(name = "Admin - Operations", description = "예외 처리함/결제/환불/참석/노쇼/피드백/신고/자동 메시지")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -51,6 +51,8 @@ public class AdminOpsController {
     private final NotificationRepository notificationRepository;
     private final MessageTemplateRepository templateRepository;
     private final AppClock clock;
+    private final com.wassup.dinner.chat.domain.ChatMessageRepository chatMessageRepository;
+    private final com.wassup.dinner.chat.domain.ScheduledRoomPostRepository roomPostRepository;
     private final com.wassup.dinner.content.ConversationContentService contentService;
     private final com.wassup.dinner.content.TopicItemRepository topicRepository;
 
@@ -105,7 +107,7 @@ public class AdminOpsController {
 
     // ---- 참석
 
-    @Operation(summary = "참석 관리: 체크인·사전 취소·당일 취소·노쇼 후보")
+    @Operation(summary = "참석 관리: 체크인/사전 취소/당일 취소/노쇼 후보")
     @GetMapping("/attendance")
     public List<AttendanceRow> attendance(@RequestParam(required = false) Long slotId) {
         return queryService.attendance(slotId);
@@ -119,7 +121,7 @@ public class AdminOpsController {
 
     // ---- 피드백·안전
 
-    @Operation(summary = "만족도 요약 (평균·NPS·사람별 선호 수)과 최근 응답")
+    @Operation(summary = "만족도 요약 (평균/NPS/사람별 선호 수)과 최근 응답")
     @GetMapping("/feedback")
     public FeedbackSummary feedback() {
         return feedbackService.summary();
@@ -140,7 +142,7 @@ public class AdminOpsController {
         return safetyService.reports();
     }
 
-    @Operation(summary = "신고 조치: NONE(기각)·WARNING·RESTRICTED(restrictDays)·BANNED")
+    @Operation(summary = "신고 조치: NONE(기각)/WARNING/RESTRICTED(restrictDays)/BANNED")
     @PostMapping("/reports/{id}/action")
     public ReportDto act(LoginUser admin, @PathVariable Long id, @Valid @RequestBody ActionRequest request) {
         return safetyService.act(id, request, admin.actor());
@@ -159,6 +161,35 @@ public class AdminOpsController {
     @PostMapping("/notifications/{id}/retry")
     public NotificationDto retryNotification(@PathVariable Long id) {
         return notificationService.retry(id);
+    }
+
+    /** 단체방 자동 메시지 발송 기록: 게시된 공지·리마인드·대화 주제 + 반복 실패한 예약 게시 */
+    public record RoomSendLog(String key, String kind, Long roomId, java.time.LocalDateTime at, String status,
+                              Long postId, int attempts) {
+    }
+
+    @Operation(summary = "단체방 자동 메시지 발송 기록 (공지/리마인드/대화 주제)")
+    @GetMapping("/room-messages")
+    @Transactional(readOnly = true)
+    public List<RoomSendLog> roomMessages() {
+        var types = java.util.List.of(com.wassup.dinner.chat.domain.ChatMessage.Type.NOTICE,
+                com.wassup.dinner.chat.domain.ChatMessage.Type.REMINDER, com.wassup.dinner.chat.domain.ChatMessage.Type.CONTENT);
+        var out = new java.util.ArrayList<RoomSendLog>();
+        chatMessageRepository.findByTypeInOrderByIdDesc(types).forEach(m ->
+                out.add(new RoomSendLog("m" + m.getId(), m.getType().name(), m.getRoomId(), m.getCreatedAt(), "SENT", null, 1)));
+        roomPostRepository.findByStatus(com.wassup.dinner.chat.domain.ScheduledRoomPost.Status.FAILED).forEach(p ->
+                out.add(new RoomSendLog("p" + p.getId(), p.getKind().name(), p.getRoomId(), p.getScheduledAt(), "FAILED", p.getId(), p.getAttempts())));
+        return out;
+    }
+
+    @Operation(summary = "실패한 단체방 예약 게시 다시 보내기 (다음 자동화 실행 때 발송)")
+    @PostMapping("/room-posts/{id}/retry")
+    @Transactional
+    public void retryRoomPost(@PathVariable Long id) {
+        var p = roomPostRepository.findById(id).orElseThrow(() -> com.wassup.dinner.common.error.ApiException.notFound("단체방 메시지"));
+        p.setStatus(com.wassup.dinner.chat.domain.ScheduledRoomPost.Status.PENDING);
+        p.setAttempts(0);
+        p.setScheduledAt(clock.now());
     }
 
     @Operation(summary = "메시지 템플릿 목록 ({변수} 치환)")
@@ -218,7 +249,7 @@ public class AdminOpsController {
                 .map(t -> new TopicDto(t.getId(), t.getCategory(), t.getText())).toList());
     }
 
-    @Operation(summary = "대화 주제 등록 (category = 관심사 코드 · GENERAL · ICEBREAKER). 다음 단체방 대화 주제부터 반영")
+    @Operation(summary = "대화 주제 등록 (category = 관심사 코드, GENERAL, ICEBREAKER). 다음 단체방 대화 주제부터 반영")
     @PostMapping("/topics")
     public TopicDto addTopic(@Valid @RequestBody TopicRequest r) {
         String text = r.text().trim();
