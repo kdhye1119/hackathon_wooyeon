@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
-import { PhoneInput, SocialButton, useToast } from '../../components/ui'
+import { PhoneInput, useToast } from '../../components/ui'
 import { flow, isRegistered } from './authFlow'
 import { get } from '../../lib/api'
 import plateOuterPaper from '../../assets/intro/plate-outer-paper.svg'
@@ -14,7 +14,6 @@ import plateOuterInk from '../../assets/intro/plate-outer-ink.svg'
 import plateInnerInk from '../../assets/intro/plate-inner-ink.svg'
 import forkInk from '../../assets/intro/fork-ink.svg'
 import spoonInk from '../../assets/intro/spoon-ink.svg'
-import { startOAuth } from './OAuthCallback'
 import './intro.css'
 
 const INTRO_SEEN = 'wt.introSeen'
@@ -191,16 +190,7 @@ export default function IntroLogin() {
           <div key="phone" className="abs" style={{ left: 20, right: 20, top: 394 }}>
             <PhoneInput value={phone} onChange={setPhone} onSubmit={submitPhone} />
           </div>,
-          <div key="or" className="abs or-divider" style={{ left: 20, right: 20, top: 468 }}>
-            <span />
-            <em>또는</em>
-            <span />
-          </div>,
-          <div key="social" className="abs social-row" style={{ top: 504 }}>
-            <SocialButton provider="kakao" onClick={() => startOAuth('kakao', toast)} />
-            <SocialButton provider="naver" onClick={() => startOAuth('naver', toast)} />
-          </div>,
-          <button key="guest" className="abs guest-link" style={{ top: 584 }} onClick={() => navigate('/guest')}>
+          <button key="guest" className="abs guest-link" style={{ top: 484 }} onClick={() => navigate('/guest')}>
             비회원으로 둘러보기
           </button>,
         ].map((el, i) => (
