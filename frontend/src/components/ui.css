@@ -371,3 +371,9 @@
 .sheet-spacer6 { height: 6px; width: 1px; flex-shrink: 0; }
 .dialog > .row { width: 100%; }
 .dialog > h3 { text-align: center; }
+
+/* 첫 데이터 로딩 가림막 (시안 데이터가 잠깐 보이지 않게) */
+.loading-veil { position: absolute; inset: 0; z-index: 90; background: var(--paper); display: flex; align-items: center; justify-content: center; }
+.loading-veil.adm { position: fixed; left: 240px; }
+.loading-dot { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--card); border-top-color: var(--mustard); animation: loading-spin 0.8s linear infinite; }
+@keyframes loading-spin { to { transform: rotate(360deg); } }

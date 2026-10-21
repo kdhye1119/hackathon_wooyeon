@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { session } from './api'
+import { beginLoad, endLoad } from './loading'
 
 /**
  * API 조회 훅. 백엔드가 꺼져 있거나 로그인 전이면 Figma 시안 데이터(fallback)로 화면을 그린다.
@@ -9,6 +10,7 @@ export function useApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unknown[
   const [data, setData] = useState<T>(fallback)
   const [loading, setLoading] = useState(true)
   const [demo, setDemo] = useState(false)
+  const first = useRef(true)
 
   const load = useCallback(async () => {
     if (!session.token || session.token === 'demo') {
@@ -18,6 +20,10 @@ export function useApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unknown[
       return
     }
     setLoading(true)
+    // 첫 로딩 동안은 시안 데이터가 보이지 않게 가린다
+    const veil = first.current
+    first.current = false
+    if (veil) beginLoad()
     try {
       setData(await fetcher())
       setDemo(false)
@@ -26,6 +32,7 @@ export function useApi<T>(fetcher: () => Promise<T>, fallback: T, deps: unknown[
       setDemo(true)
     } finally {
       setLoading(false)
+      if (veil) endLoad()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)

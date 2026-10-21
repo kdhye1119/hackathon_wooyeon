@@ -14,6 +14,7 @@ import { CalendarScreen, ReviewScreen } from './screens/records/Records'
 import { HistoryPage, MyPage, TicketPage } from './screens/my/My'
 import AdminApp from './admin/AdminApp'
 import DemoPanel from './components/DemoPanel'
+import { LoadingVeil } from './lib/loading'
 
 /** 로그인 전이면 인트로로 (비회원 둘러보기는 /guest 후기 화면만) */
 function RequireSession({ children }: { children: ReactNode }) {
@@ -27,6 +28,7 @@ function ParticipantApp() {
       {/* 심사용 시연 도구: 넓은 화면의 빈 공간에만 보인다 */}
       <DemoPanel />
       <div className="app-frame">
+        <LoadingVeil />
         <Routes>
           <Route path="/start" element={<IntroLogin />} />
           <Route path="/guest" element={<GuestHome />} />
