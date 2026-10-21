@@ -49,7 +49,7 @@ public class Profile {
     private String foodRestrictions;
 
     public boolean isComplete() {
-        return birthYear != null && gender != null && job != null && !job.isBlank()
-                && !interests.isEmpty() && !traits.isEmpty();
+        // 매칭 필수 조건(나이·성별)만 확인. 직업·관심사·성향은 비어 있어도 신청할 수 있다
+        return birthYear != null && gender != null;
     }
 }
