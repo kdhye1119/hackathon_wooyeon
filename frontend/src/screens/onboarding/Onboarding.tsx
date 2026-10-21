@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Body, Button, Chip, Screen, TextField } from '../../components/ui'
+import { Body, Button, Chip, Screen, TextField, useToast } from '../../components/ui'
 import { Icon } from '../../components/Icon'
 import { INTERESTS, TRAITS, loadDraft, saveDraft, toggle, type ProfileDraft } from '../../lib/options'
 import { get, put, session } from '../../lib/api'
@@ -68,13 +68,15 @@ export default function Onboarding() {
     d.traits.length > 0,
   ][step]
 
-  const next = () => {
+  const toast = useToast()
+  const next = async () => {
     const draft = { ...d, mbti: mbtiUnknown ? '' : mbti.join('') }
     saveDraft(draft)
     if (step < 3) return setStep(step + 1)
     // 로그인한 계정은 바로 서버에 저장 (매칭 선호는 비어 있어도 되고, 신청할 때 고른다)
     if (live()) {
-      put('/api/me/profile', {
+      try {
+        await put('/api/me/profile', {
         name: draft.name,
         birthYear: Number(draft.birthYear),
         gender: draft.gender,
@@ -86,7 +88,12 @@ export default function Onboarding() {
         desiredTypes: server?.desiredTypes ?? null,
         priceRanges: server?.priceRanges ?? null,
         foodRestrictions: server?.foodRestrictions ?? null,
-      }).catch(() => undefined)
+        })
+      } catch (e) {
+        // 저장 실패를 조용히 넘기지 않는다: 이 화면에 머물며 이유를 보여준다
+        toast.show(e instanceof Error ? `프로필을 저장하지 못했어요: ${e.message}` : '프로필을 저장하지 못했어요')
+        return
+      }
     }
     session.patch({ name: draft.name })
     navigate('/', { replace: true })
@@ -200,6 +207,7 @@ export default function Onboarding() {
           {step === 3 ? '완료' : '다음'}
         </Button>
       </div>
+      {toast.node}
     </Screen>
   )
 }
