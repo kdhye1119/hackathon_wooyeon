@@ -23,4 +23,5 @@ WORKDIR /app
 COPY --from=api /api/build/libs/*-SNAPSHOT.jar app.jar
 ENV TZ=Asia/Seoul
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
+# 무료 플랜(512MB)에서도 뜨도록 힙을 컨테이너 메모리의 70%로 제한
+ENTRYPOINT ["sh", "-c", "java -XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k -Dserver.port=${PORT:-8080} -jar app.jar"]
