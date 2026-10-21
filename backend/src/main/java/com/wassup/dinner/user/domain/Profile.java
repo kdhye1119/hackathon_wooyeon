@@ -50,7 +50,6 @@ public class Profile {
 
     public boolean isComplete() {
         return birthYear != null && gender != null && job != null && !job.isBlank()
-                && mbti != null && mbti.length() == 4
                 && !interests.isEmpty() && !traits.isEmpty();
     }
 }

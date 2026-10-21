@@ -40,8 +40,8 @@ public class ProfileService {
         p.setBirthYear(r.birthYear());
         p.setGender(r.gender());
         p.setJob(r.job());
-        p.setInstagramId(r.instagramId());
-        p.setMbti(r.mbti().toUpperCase());
+        p.setInstagramId(r.instagramId() == null || r.instagramId().isBlank() ? null : r.instagramId().trim());
+        p.setMbti(r.mbti() == null || r.mbti().isBlank() ? null : r.mbti().toUpperCase());
         p.setInterests(names(r.interests()));
         p.setTraits(names(r.traits()));
         p.setDesiredTypes(names(r.desiredTypes()));

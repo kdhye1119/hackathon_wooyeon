@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLA
 import { NavLink, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Icon } from './Icon'
+import { get, session } from '../lib/api'
 import markUrl from '../assets/brand/mark.svg'
 import './ui.css'
 
@@ -154,18 +155,31 @@ export function Logo({ wordmark = true }: { wordmark?: boolean }) {
   )
 }
 
-export function BellButton({ unread = true }: { unread?: boolean }) {
+export function BellButton({ unread }: { unread?: boolean }) {
   const navigate = useNavigate()
+  // 읽지 않은 알림이 있을 때만 빨간 점 (시안 세션은 Figma 처럼 표시)
+  const [hasUnread, setHasUnread] = useState(!session.token || session.token === 'demo')
+  useEffect(() => {
+    if (unread !== undefined || !session.token || session.token === 'demo') return
+    let alive = true
+    get<{ readAt: string | null }[]>('/api/me/notifications')
+      .then((list) => alive && setHasUnread(list.some((n) => !n.readAt)))
+      .catch(() => alive && setHasUnread(false))
+    return () => {
+      alive = false
+    }
+  }, [unread])
+  const dot = unread ?? hasUnread
   return (
-    <button className="bell-btn" aria-label="알림" onClick={() => navigate('/notifications')}>
+    <button className="bell-btn" aria-label={dot ? '알림, 읽지 않은 알림 있음' : '알림'} onClick={() => navigate('/notifications')}>
       <Icon name="bell" />
-      {unread && <span className="bell-dot" />}
+      {dot && <span className="bell-dot" />}
     </button>
   )
 }
 
 /* ── AppHeader: 로고 + 알림 ── */
-export function AppHeader({ unread = true }: { unread?: boolean }) {
+export function AppHeader({ unread }: { unread?: boolean }) {
   return (
     <header className="app-header">
       <span style={{ flex: 1 }}>
