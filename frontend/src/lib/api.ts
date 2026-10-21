@@ -1,7 +1,14 @@
 // 백엔드(Spring Boot) REST 클라이언트. Vite dev 서버가 /api 를 :8080 으로 프록시한다.
 const TOKEN_KEY = 'wt.token'
 const USER_KEY = 'wt.user'
-const ADMIN_TOKEN_KEY = 'wt.adminToken'
+// 키 이름을 바꿔, 예전에 시연 도구가 저장해 둔 운영자 로그인은 무효로 (운영자 화면은 직접 로그인해야 함)
+const ADMIN_TOKEN_KEY = 'wt.admin.session'
+try {
+  localStorage.removeItem('wt.adminToken')
+  localStorage.removeItem('wt.adminToken.name')
+} catch {
+  /* noop */
+}
 
 export type LoginResponse = {
   token: string
@@ -87,7 +94,7 @@ export const adminSession = {
 export async function api<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const headers = new Headers(init.headers)
   const token = path.startsWith('/api/admin') ? adminSession.token : session.token
-  if (token) headers.set('Authorization', `Bearer ${token}`)
+  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
   let body = init.body
   if (init.json !== undefined) {
     headers.set('Content-Type', 'application/json')
